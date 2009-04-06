@@ -11,6 +11,9 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
+name = 'zc.'
+version = '0.1'
+
 import os
 from setuptools import setup, find_packages
 
@@ -22,17 +25,15 @@ def read(rname):
                              )).read()
 
 long_description = (
-        read('src/zc/?/README.txt')
+        read('src/zc/%s/README.txt' % name.split('.')[1])
         + '\n' +
         'Download\n'
         '--------\n'
         )
 
-open('doc.txt', 'w').write(long_description)
-
 setup(
-    name = '',
-    version = '0.1',
+    name = name,
+    version = version,
     author = 'Jim Fulton',
     author_email = 'jim@zope.com',
     description = '',
