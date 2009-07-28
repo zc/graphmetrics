@@ -13,6 +13,8 @@
 ##############################################################################
 name = 'zc.'
 version = '0.1'
+description = """
+"""
 
 import os
 from setuptools import setup, find_packages
@@ -20,28 +22,17 @@ from setuptools import setup, find_packages
 entry_points = """
 """
 
-def read(rname):
-    return open(os.path.join(os.path.dirname(__file__), *rname.split('/')
-                             )).read()
-
-long_description = (
-        read('src/zc/%s/README.txt' % name.split('.')[1])
-        + '\n' +
-        'Download\n'
-        '--------\n'
-        )
-
 setup(
     name = name,
     version = version,
     author = 'Jim Fulton',
     author_email = 'jim@zope.com',
-    description = '',
-    long_description=long_description,
+    description = description.split('\n', 1)[0],
+    long_description = description.split('\n', 1)[1].lstrip(),
     license = 'ZPL 2.1',
-    
+
     packages = find_packages('src'),
-    namespace_packages = ['zc'],
+    namespace_packages = name.split('.')[:1],
     package_dir = {'': 'src'},
     install_requires = 'setuptools',
     zip_safe = False,
