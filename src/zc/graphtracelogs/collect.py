@@ -36,7 +36,7 @@ def rrdcreate(rrd, t):
         rrdtool.DataSource('rpm', rrdtool.GaugeDST),
         rrdtool.DataSource('epm', rrdtool.GaugeDST),
         rrdtool.DataSource('bl',  rrdtool.GaugeDST),
-        rrdtool.DataSource('spr',  rrdtool.GaugeDST),
+        rrdtool.DataSource('spr', rrdtool.GaugeDST),
         rrdtool.RoundRobinArchive(rrdtool.AverageCF, 0.5,  1,   1600),
         rrdtool.RoundRobinArchive(rrdtool.AverageCF, 0.5,  5,   2880),
         rrdtool.RoundRobinArchive(rrdtool.AverageCF, 0.5, 60, 24*400),
@@ -121,20 +121,19 @@ class Instance(dict):
     templates = 'rpm', 'epm', 'bl', 'spr'
     def update(self, newminute):
         ts = minute2ts(self.minute)
-        if ts <= self.rrd_last:
-            return
-        if self.secondsn:
-            self.rrd.update(
-                rrdtool.Val(self.requests, self.errors, self.waiting,
-                            self.seconds/self.secondsn,
-                            timestamp=ts),
-                template = self.templates)
-        else:
-            self.rrd.update(
-                rrdtool.Val(self.requests, self.errors, self.waiting,
-                            timestamp=ts),
-                template = self.template)
-        self.requests = self.errors = self.secondsn = self.seconds
+        if ts > self.rrd_last:
+            if self.secondsn:
+                self.rrd.update(
+                    rrdtool.Val(self.requests, self.errors, self.waiting,
+                                self.secondsn*60/self.seconds,
+                                timestamp=ts),
+                    template = self.templates)
+            else:
+                self.rrd.update(
+                    rrdtool.Val(self.requests, self.errors, self.waiting,
+                                timestamp=ts),
+                    template = self.template)
+        self.requests = self.errors = self.secondsn = self.seconds = 0
         self.minute = newminute
 
     def __repr__(self):
@@ -160,7 +159,9 @@ def process_file(f, state, lineno=0):
         requests.event(typ, rid, dt, minute, args)
     return lineno, n
 
-def main(args):
+def main(args=None):
+    if args is None:
+        args = sys.argv[1:]
     log_dir, rrd_dir = args
     log_dir = os.path.abspath(log_dir)
     os.chdir(rrd_dir)

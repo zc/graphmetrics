@@ -1,49 +1,69 @@
-import datetime, os, pytz, rrdtool, sys, time, tempfile
+import datetime, json, os, pytz, re, rrdtool, sys, time, tempfile
 from rrdtool import *
-import bobo
+import bobo, boboserver
+
+inst_rrd = re.compile(r'\S+__\S+__\S+.rrd$').match
+
+def config(config):
+    global rrd_dir
+    rrd_dir = config['rrd']
+
+@bobo.query('/')
+def index():
+    return open(os.path.join(os.path.dirname(__file__), 'index.html')).read()
+
+@bobo.query('/web.js', content_type="text/javascript")
+def js():
+    return open(os.path.join(os.path.dirname(__file__), 'web.js')).read()
+
+@bobo.query(content_type='application/json')
+def get_instances():
+    return json.dumps(dict(
+        instances=[f[:-4] for f in os.listdir(rrd_dir)
+                   if inst_rrd(f)]
+        ))
 
 @bobo.query('/show.png', content_type='image/png')
 def show(instance, start=None, end=None,
          width=900, height=200, step=None,
          log=None):
-    rrd_path = 'app2.ghm.zope.net__GHM__instance%s.rrd' % str(instance)
+    instance += '.rrd'
+    assert inst_rrd(instance)
+    rrd_path = os.path.join(rrd_dir, instance)
     fd, img_path = tempfile.mkstemp('.png')
     g = RoundRobinGraph(img_path)
 
-    title = 'Instance %s' % instance
-
-    options = {}
+    options = dict(
+        width=int(width),
+        height=int(height),
+        title='Instance %s' % instance.replace('__', ' '),
+        )
     if start:
         options['start'] = parsedt(start)
-        title += ' %s-' % start
     if end:
         options['end'] = parsedt(end)
         if not title.endswith('-'):
             title += ' -'
-        title += end
     if step:
         options['step'] = int(step)*60
-    if log is not None:
-        options['logarithmic'] = None
 
-
-    print 'wtf', rrd_path
-
-    g.graph(
-        # 3-level key
+    lines = [
         Def("rpm", rrd_path, data_source="rpm", cf=AverageCF),
         Def("epm", rrd_path, data_source="epm", cf=AverageCF),
         Def("bl", rrd_path, data_source="bl", cf=AverageCF),
-        LINE1("rpm", rrggbb="ff0000", legend="rpm"),
-        LINE1("epm", rrggbb="00ff00", legend="epm"),
-        LINE1("bl", rrggbb="0000ff", legend="waiting"),
-        #alt_y_mrtg=None,
-        width=int(width),
-        height=int(height),
-        #x="HOUR:1:HOUR:2:HOUR:4:0:%H",
-        title=title,
-        zoom=2,
-        **options)
+        LINE1("rpm", rrggbb="00ff00", legend="rpm"),
+        LINE1("epm", rrggbb="ff0000", legend="epm"),
+        LINE1("bl", rrggbb="e082e6", legend="waiting"),
+        ]
+
+    if log == 'y':
+        options['logarithmic'] = None
+        lines.extend((
+            Def("spr", rrd_path, data_source="spr", cf=AverageCF),
+            LINE1("spr", rrggbb="93f9fb", legend="max rpm"),
+            ))
+
+    g.graph(*lines, **options)
 
     os.close(fd)
     return open(img_path).read()
