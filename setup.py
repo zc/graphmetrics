@@ -11,7 +11,7 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
-name = 'zc.'
+name = 'zc.graphtracelogs'
 version = '0.1'
 description = """
 """
@@ -34,7 +34,7 @@ setup(
     packages = find_packages('src'),
     namespace_packages = name.split('.')[:1],
     package_dir = {'': 'src'},
-    install_requires = 'setuptools',
+    install_requires = ['setuptools', 'py-rrdtool', 'pytz'],
     zip_safe = False,
     entry_points=entry_points,
     )
