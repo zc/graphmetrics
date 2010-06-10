@@ -19,8 +19,8 @@ def js():
 @bobo.query(content_type='application/json')
 def get_instances():
     return json.dumps(dict(
-        instances=[f[:-4] for f in os.listdir(rrd_dir)
-                   if inst_rrd(f)]
+        instances=sorted(f[:-4] for f in os.listdir(rrd_dir)
+                         if inst_rrd(f))
         ))
 
 @bobo.query('/show.png', content_type='image/png')
@@ -36,7 +36,7 @@ def show(instance, start=None, end=None,
     options = dict(
         width=int(width),
         height=int(height),
-        title='Instance %s' % instance.replace('__', ' '),
+        title=instance[:-4].replace('__', ' '),
         )
     if start:
         options['start'] = parsedt(start)

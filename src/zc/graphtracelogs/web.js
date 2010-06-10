@@ -2,6 +2,8 @@ dojo.require("dijit.form.Button");
 dojo.require("dijit.Menu");
 dojo.require("dijit.form.DateTextBox");
 dojo.require("dijit.form.CheckBox");
+dojo.require("dijit.form.FilteringSelect");
+dojo.require("dojo.data.ItemFileReadStore");
 
 zc = function() {
     // var data = [{x: 1, y: 1}, {x: 2, y: 2}];
@@ -13,6 +15,7 @@ zc = function() {
     //     zc.chart1.render();
     // };
     var imgid = 0;
+    var instances;
 
     var newChart = function(inst) {
         imgid ++;
@@ -48,7 +51,7 @@ zc = function() {
                 img.src =  'show.png'+qs(params);
             }
         }).domNode);
-        dojo.place('<span> Log:</span>', div)
+        dojo.place('<span> Log: </span>', div)
         div.appendChild(new dijit.form.CheckBox({
             onChange: function(val) {
                 if (val)
@@ -56,6 +59,22 @@ zc = function() {
                 else
                     params.log = 'n';
                 params.bust++;
+                img.src =  'show.png'+qs(params);
+            }
+        }).domNode);
+        dojo.place('<span> Instance: </span>', div);
+        div.appendChild(new dijit.form.FilteringSelect({
+            searchAttr: 'label',
+            store: new dojo.data.ItemFileReadStore({
+                data: {identifier: 'id', label: 'label',
+                       items: dojo.map(instances, function(inst) {
+                           return {id: inst,
+                                   label: replaceAll(inst, '__', ' ')
+                                  };
+                       })}
+            }),
+            onChange: function(val) {
+                params.instance = val;
                 img.src =  'show.png'+qs(params);
             }
         }).domNode);
@@ -86,13 +105,14 @@ zc = function() {
                 url: 'get_instances.json',
                 handleAs: 'json',
                 load: function (data) {
+                    instances = data.instances;
                     var menu = new dijit.Menu({
                         style: "display: none;"
                     });
-                    for (var i=0; i < data.instances.length; i++) {
+                    for (var i=0; i < instances.length; i++) {
                         menu.addChild(new dijit.MenuItem({
-                            label: replaceAll(data.instances[i], "__", " "),
-                            onClick: dojo.partial(newChart, data.instances[i])
+                            label: replaceAll(instances[i], "__", " "),
+                            onClick: dojo.partial(newChart, instances[i])
                         }));
                     }
                     dojo.body().appendChild(new dijit.form.ComboButton({
@@ -102,26 +122,6 @@ zc = function() {
                 },
                 error: function (error) {alert(error)}
             });
-
-
-            // dojo.create('div', {id: 'simplechart',
-            //                     style: "width: 250px; height: 150px;"},
-            //             dojo.body())
-
-
-            // var button1 = new dijit.form.Button({
-            //     label: "1",
-            //     onClick: function () {update(1); }});
-
-            // dojo.body().appendChild(button1.domNode);
-
-            // var chart1 = new dojox.charting.Chart2D("simplechart");
-            // chart1.addPlot("default", {type: "Lines"});
-            // chart1.addAxis("x");
-            // chart1.addAxis("y", {vertical: true});
-            // chart1.addSeries("Series 1", data);
-            // chart1.render();
-            // zc.chart1 = chart1;
         }
     }
 }();
