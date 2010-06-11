@@ -4,18 +4,19 @@ logging.basicConfig(level=logging.INFO)
 
 def tliter(f, lineno=0):
     while 1:
-        record = f.readline()
-        if not record:
+        line = f.readline()
+        if not line:
             break
         lineno += 1
-        record = record.strip().split()
+        record = line.strip().split()
         instance = '__'.join(record[:3])
         if 'T' in record[5]:
             continue
         typ, rid, date, time = record[3:7]
         args = record[7:]
         minute = date + time.rsplit(':', 1)[0]
-        yield instance, typ, rid, parsedt(date, time), minute, args, lineno
+        yield (instance, typ, rid, parsedt(date, time), minute, args,
+               lineno, line)
 
 def parsedt(date, time):
     if '.' in time:
@@ -104,8 +105,8 @@ class Instance(dict):
                 self.waiting -= 1
                 self[rid] = dt
             elif typ == 'A':
-                response, _ = args
-                if response.startswith('5'):
+                response = args[0]
+                if response[0] in '5E':
                     self.errors += 1
                 self.requests += 1
                 if isinstance(self[rid], datetime.datetime):
@@ -146,7 +147,8 @@ def dt_diff_seconds(d2, d1):
 
 def process_file(f, state, lineno=0):
     n=0
-    for instance_name, typ, rid, dt, minute, args, lineno in tliter(f, lineno):
+    for instance_name, typ, rid, dt, minute, args, lineno, line in tliter(
+        f, lineno):
         n += 1
         try:
             requests = state[instance_name]
