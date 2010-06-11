@@ -2,6 +2,7 @@ dojo.require("dijit.form.Button");
 dojo.require("dijit.Menu");
 dojo.require("dijit.form.DateTextBox");
 dojo.require("dijit.form.CheckBox");
+dojo.require("dijit.form.TextBox");
 dojo.require("dijit.form.FilteringSelect");
 dojo.require("dojo.data.ItemFileReadStore");
 
@@ -52,6 +53,7 @@ zc = function() {
                 update_img({start: date});
             }
         }).domNode);
+        dojo.style(div.lastChild, "width", "10em");
         dojo.place('<span> to </span>', div)
         div.appendChild(new dijit.form.DateTextBox({
             onChange: function(date) {
@@ -61,6 +63,16 @@ zc = function() {
                 update_img({end: date});
             }
         }).domNode);
+        dojo.style(div.lastChild, "width", "10em");
+        dojo.place('<span> Trail: </span>', div)
+        div.appendChild(new dijit.form.ValidationTextBox({
+            maxLength: 3,
+            regExp: "[0-9]+",
+            onChange: function(val) {
+                update_img({trail: val});
+            }
+        }).domNode);
+        dojo.style(div.lastChild, "width", "4em");
         dojo.place('<span> Log: </span>', div)
         div.appendChild(new dijit.form.CheckBox({
             onChange: function(val) {

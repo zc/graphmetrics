@@ -26,7 +26,7 @@ def get_instances():
 @bobo.query('/show.png', content_type='image/png')
 def show(instance, start=None, end=None,
          width=900, height=200, step=None,
-         log=None):
+         log=None, trail=None):
     instance += '.rrd'
     assert inst_rrd(instance)
     rrd_path = os.path.join(rrd_dir, instance)
@@ -38,10 +38,15 @@ def show(instance, start=None, end=None,
         height=int(height),
         title=instance[:-4].replace('__', ' '),
         )
-    if start:
-        options['start'] = parsedt(start)
-    if end:
-        options['end'] = parsedt(end)
+
+    if trail:
+        options['start'] = int(time.time()/60*60-int(trail)*3600)
+    else:
+        if start:
+            options['start'] = parsedt(start)
+        if end:
+            options['end'] = parsedt(end)
+
     if step:
         options['step'] = int(step)*60
 
