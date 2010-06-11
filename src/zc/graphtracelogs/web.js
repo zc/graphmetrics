@@ -25,30 +25,40 @@ zc = function() {
             bust: 0
         };
         var img = dojo.create(
-            'img', {id: 'img'+imgid, src: 'show.png'+qs(params)}, div);
+            'img', {id: 'img'+imgid,
+                    src: 'show.png?'+dojo.objectToQuery(params)}, div);
+        var update_img = function (ob) {
+            if (ob != undefined)
+                dojo.mixin(params, ob);
+            params.bust++;
+            img.src =  'show.png?'+dojo.objectToQuery(params);
+        };
+        var keep_refreshing = function () {
+            if (params.end == null)
+                update_img();
+            setTimeout(keep_refreshing, 60000);
+        };
+        setTimeout(keep_refreshing, 60000);
+        dojo.create('br', {}, div);
+        div.appendChild(new dijit.form.Button({
+            label: 'Reload',
+            onClick: update_img
+        }).domNode);
         div.appendChild(new dijit.form.DateTextBox({
             onChange: function(date) {
-                if (date == null)
-                    date = '';
-                else
+                if (date != null)
                     date = (date.getFullYear()+'-'+(date.getMonth()+1)
                             +'-'+date.getDate());
-                params.start = date;
-                params.bust++;
-                img.src =  'show.png'+qs(params);
+                update_img({start: date});
             }
         }).domNode);
         dojo.place('<span> to </span>', div)
         div.appendChild(new dijit.form.DateTextBox({
             onChange: function(date) {
-                if (date == null)
-                    date = '';
-                else
+                if (date != null)
                     date = (date.getFullYear()+'-'+(date.getMonth()+1)
                             +'-'+date.getDate());
-                params.end = date;
-                params.bust++;
-                img.src =  'show.png'+qs(params);
+                update_img({end: date});
             }
         }).domNode);
         dojo.place('<span> Log: </span>', div)
@@ -58,8 +68,7 @@ zc = function() {
                     params.log = 'y';
                 else
                     params.log = 'n';
-                params.bust++;
-                img.src =  'show.png'+qs(params);
+                update_img();
             }
         }).domNode);
         dojo.place('<span> Instance: </span>', div);
@@ -73,10 +82,7 @@ zc = function() {
                                   };
                        })}
             }),
-            onChange: function(val) {
-                params.instance = val;
-                img.src =  'show.png'+qs(params);
-            }
+            onChange: function(val) { update_img({instance: val}); }
         }).domNode);
     };
 
@@ -86,16 +92,6 @@ zc = function() {
             if (news == str) return str;
             str = news;
         }
-    };
-
-    var qs = function(obj) {
-        var delim = '?';
-        var result = '';
-        for (var v in obj) {
-            result = result + delim + v + '=' + obj[v];
-            delim = '&';
-        }
-        return result;
     };
 
     return {
