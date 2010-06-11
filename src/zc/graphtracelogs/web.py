@@ -42,8 +42,6 @@ def show(instance, start=None, end=None,
         options['start'] = parsedt(start)
     if end:
         options['end'] = parsedt(end)
-        if not title.endswith('-'):
-            title += ' -'
     if step:
         options['step'] = int(step)*60
 
