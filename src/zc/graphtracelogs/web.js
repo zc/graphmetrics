@@ -16,7 +16,37 @@ zc = function() {
     //     zc.chart1.render();
     // };
     var imgid = 0;
-    var instances;
+    var customers;
+
+    var newInstanceMenuButton = function(label, instfunc) {
+        var customer_menu = new dijit.Menu({ style: "display: none;" });
+        for (var ic=0; ic < customers.length; ic++) {
+            var hosts = customers[ic][1];
+            var host_menu = new dijit.Menu({ style: "display: none;" });
+            for (var ih=0; ih < hosts.length; ih++) {
+                var instances = hosts[ih][1];
+                var instance_menu = new dijit.Menu({ style: "display: none;" });
+                for (var ii=0; ii < instances.length; ii++) {
+                    instance_menu.addChild(new dijit.MenuItem({
+                        label: instances[ii][0],
+                        onClick: dojo.partial(instfunc, instances[ii][1])
+                    }));
+                }
+                host_menu.addChild(new dijit.PopupMenuItem({
+                    label: hosts[ih][0],
+                    popup: instance_menu
+                }));
+            }
+            customer_menu.addChild(new dijit.PopupMenuItem({
+                label: customers[ic][0],
+                popup: host_menu
+            }));
+        }
+        return new dijit.form.ComboButton({
+            label: label,
+            dropDown: customer_menu
+        })
+    };
 
     var newChart = function(inst) {
         imgid ++;
@@ -83,19 +113,10 @@ zc = function() {
                 update_img();
             }
         }).domNode);
-        dojo.place('<span> Instance: </span>', div);
-        div.appendChild(new dijit.form.FilteringSelect({
-            searchAttr: 'label',
-            store: new dojo.data.ItemFileReadStore({
-                data: {identifier: 'id', label: 'label',
-                       items: dojo.map(instances, function(inst) {
-                           return {id: inst,
-                                   label: replaceAll(inst, '__', ' ')
-                                  };
-                       })}
-            }),
-            onChange: function(val) { update_img({instance: val}); }
-        }).domNode);
+        div.appendChild(newInstanceMenuButton(
+            "Instance:",
+            function(val){ update_img({instance: val}); }
+        ).domNode);
     };
 
     var replaceAll = function(str, orig, repl) {
@@ -113,20 +134,10 @@ zc = function() {
                 url: 'get_instances.json',
                 handleAs: 'json',
                 load: function (data) {
-                    instances = data.instances;
-                    var menu = new dijit.Menu({
-                        style: "display: none;"
-                    });
-                    for (var i=0; i < instances.length; i++) {
-                        menu.addChild(new dijit.MenuItem({
-                            label: replaceAll(instances[i], "__", " "),
-                            onClick: dojo.partial(newChart, instances[i])
-                        }));
-                    }
-                    dojo.body().appendChild(new dijit.form.ComboButton({
-                        label: "New chart:",
-                        dropDown: menu
-                    }).domNode);
+                    customers = data.customers;
+                    dojo.body().appendChild(
+                        newInstanceMenuButton("New chart:", newChart
+                                             ).domNode);
                 },
                 error: function (error) {alert(error)}
             });
