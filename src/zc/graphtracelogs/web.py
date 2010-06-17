@@ -18,9 +18,24 @@ def js():
 
 @bobo.query(content_type='application/json')
 def get_instances():
+    customers = {}
+    for inst in sorted(f[:-4] for f in os.listdir(rrd_dir)
+                       if inst_rrd(f)):
+        host, customer, inst_name = inst.split('__')
+        hosts = customers.get(customer)
+        if hosts is None:
+            hosts = customers[customer] = {}
+
+        instances = hosts.get(host)
+        if instances is None:
+            instances = hosts[host] = []
+        instances.append((inst_name, inst))
+
+    import pprint
+    pprint.pprint(customers)
     return json.dumps(dict(
-        instances=sorted(f[:-4] for f in os.listdir(rrd_dir)
-                         if inst_rrd(f))
+        customers=sorted((customer, sorted(customers[customer].items()))
+                         for customer in customers)
         ))
 
 @bobo.query('/show.png', content_type='image/png')
