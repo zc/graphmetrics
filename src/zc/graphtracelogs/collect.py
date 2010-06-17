@@ -165,6 +165,7 @@ def main(args=None):
     if args is None:
         args = sys.argv[1:]
     log_dir, rrd_dir = args
+    log_dir_name = os.path.basename(log_dir)+'-'
     log_dir = os.path.abspath(log_dir)
     os.chdir(rrd_dir)
     logs = sorted(f for f in os.listdir(log_dir) if f.endswith('-z4m.log'))
@@ -172,18 +173,20 @@ def main(args=None):
     while len(logs) > 1:
         log_name = logs.pop(0)
         log_path = os.path.join(log_dir, log_name)
-        if os.path.exists(log_name+'.endstate'):
-            state = cPickle.loads(open(log_name+'.endstate').read())
+        if os.path.exists(log_dir_name+log_name+'.endstate'):
+            state = cPickle.loads(
+                open(log_dir_name+log_name+'.endstate').read())
         else:
             logging.info('processing %s', log_path)
             process_file(open(log_path), state)
-            open(log_name+'.endstate', 'w').write(cPickle.dumps(state))
+            open(log_dir_name+log_name+'.endstate', 'w').write(
+                cPickle.dumps(state))
 
     log_name, = logs
     while 1:
         log_path = os.path.join(log_dir, log_name)
         logging.info('processing %s', log_path)
-        assert not os.path.exists(log_name+'.endstate')
+        assert not os.path.exists(log_dir_name+log_name+'.endstate')
         log_file = open(log_path)
         lineno = 0
         while 1:
@@ -199,7 +202,8 @@ def main(args=None):
                 lineno, n = process_file(log_file, state, lineno)
                 if n:
                     continue
-                open(log_name+'.endstate', 'w').write(cPickle.dumps(state))
+                open(log_dir_name+log_name+'.endstate', 'w').write(
+                    cPickle.dumps(state))
                 log_name = later_logs.pop()
                 break
 
