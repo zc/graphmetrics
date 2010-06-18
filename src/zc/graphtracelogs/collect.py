@@ -38,9 +38,10 @@ def rrdcreate(rrd, t):
         rrdtool.DataSource('epm', rrdtool.GaugeDST),
         rrdtool.DataSource('bl',  rrdtool.GaugeDST),
         rrdtool.DataSource('spr', rrdtool.GaugeDST),
-        rrdtool.RoundRobinArchive(rrdtool.AverageCF, 0.5,  1,   1600),
-        rrdtool.RoundRobinArchive(rrdtool.AverageCF, 0.5,  5,   2880),
-        rrdtool.RoundRobinArchive(rrdtool.AverageCF, 0.5, 60, 24*400),
+        rrdtool.DataSource('start', rrdtool.GaugeDST),
+        rrdtool.RoundRobinArchive(rrdtool.AverageCF, 0.99,  1,   1600),
+        rrdtool.RoundRobinArchive(rrdtool.AverageCF, 0.99,  5,   2880),
+        rrdtool.RoundRobinArchive(rrdtool.AverageCF, 0.99, 60, 24*400),
         start=t, step=60)
 
 dst = pytz.timezone('US/Eastern').dst
@@ -118,10 +119,19 @@ class Instance(dict):
                     self.waiting -= 1
                 del self[rid]
 
+    start_template = 'start',
+    def start(self, min):
+        ts = minute2ts(min)
+        if ts > self.rrd_last:
+            self.rrd.update(rrdtool.Val(1, timestamp=ts),
+                            template=self.start_template)
+            self.rrd_last = ts # Avoid problems w multiple starts in same min
+        self.reset()
+
     template = 'rpm', 'epm', 'bl'
     templates = 'rpm', 'epm', 'bl', 'spr'
     def update(self, newminute):
-        ts = minute2ts(self.minute)
+        ts = minute2ts(self.minute)+60
         if ts > self.rrd_last:
             if self.secondsn:
                 self.rrd.update(
@@ -156,7 +166,7 @@ def process_file(f, state, lineno=0):
             requests = state[instance_name] = Instance(
                 instance_name, minute)
         if typ == 'S':
-            requests.reset()
+            requests.start(minute)
             continue
         requests.event(typ, rid, dt, minute, args)
     return lineno, n
