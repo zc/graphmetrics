@@ -183,7 +183,7 @@ def show(instance, start=None, end=None,
         rrdtool.LINE1("rpm", rrggbb="00ff00", legend="rpm"),
         rrdtool.LINE1("epm", rrggbb="ff0000", legend="epm"),
         rrdtool.LINE1("bl", rrggbb="e082e6", legend="waiting"),
-        'TICK:start#00000033:1:start',
+        'TICK:start#000000aa:1:start',
         ])
 
     if log:
