@@ -8,15 +8,20 @@ def tliter(f, lineno=0):
         if not line:
             break
         lineno += 1
-        record = line.strip().split()
-        instance = '__'.join(record[:3])
-        if 'T' in record[5]:
-            continue
-        typ, rid, date, time = record[3:7]
-        args = record[7:]
-        minute = date + time.rsplit(':', 1)[0]
-        yield (instance, typ, rid, parsedt(date, time), minute, args,
-               lineno, line)
+        try:
+            record = line.strip().split()
+            instance = '__'.join(record[:3])
+            if 'T' in record[5]:
+                continue
+            typ, rid, date, time = record[3:7]
+            args = record[7:]
+            minute = date + time.rsplit(':', 1)[0]
+            yield (instance, typ, rid, parsedt(date, time), minute, args,
+                   lineno, line)
+#             if lineno%10000 == 0:
+#                 print lineno, instance, date, time
+        except:
+            logging.exception('Bad log record line %r: %r', lineno, line)
 
 def parsedt(date, time):
     if '.' in time:
@@ -120,12 +125,14 @@ class Instance(dict):
                 del self[rid]
 
     start_template = 'start',
-    def start(self, min):
-        ts = minute2ts(min)
+    def start(self, dt):
+        ts = int(time.mktime((
+            dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, 0, 0,
+            bool(dst(dt).seconds)
+            )))
         if ts > self.rrd_last:
             self.rrd.update(rrdtool.Val(1, timestamp=ts),
                             template=self.start_template)
-            self.rrd_last = ts # Avoid problems w multiple starts in same min
         self.reset()
 
     template = 'rpm', 'epm', 'bl'
@@ -166,7 +173,7 @@ def process_file(f, state, lineno=0):
             requests = state[instance_name] = Instance(
                 instance_name, minute)
         if typ == 'S':
-            requests.start(minute)
+            requests.start(dt)
             continue
         requests.event(typ, rid, dt, minute, args)
     return lineno, n
