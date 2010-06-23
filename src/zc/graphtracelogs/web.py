@@ -199,7 +199,7 @@ def show(instance, start=None, end=None,
     g = rrdtool.RoundRobinGraph(img_path)
 
     options = dict(
-        width=int(width),
+        width=int(width)-100,
         height=int(height),
         title=title,
         )
