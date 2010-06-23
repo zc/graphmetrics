@@ -83,7 +83,7 @@ zc = function() {
                 update_img({start: date});
             }
         }).domNode);
-        dojo.style(div.lastChild, "width", "10em");
+        dojo.style(div.lastChild, "width", "8em");
         dojo.place('<span> to </span>', div)
         div.appendChild(new dijit.form.DateTextBox({
             onChange: function(date) {
@@ -93,7 +93,7 @@ zc = function() {
                 update_img({end: date});
             }
         }).domNode);
-        dojo.style(div.lastChild, "width", "10em");
+        dojo.style(div.lastChild, "width", "8em");
         dojo.place('<span> Trail: </span>', div)
         div.appendChild(new dijit.form.ValidationTextBox({
             maxLength: 3,
@@ -117,6 +117,48 @@ zc = function() {
             "Instance:",
             function(val){ update_img({instance: val}); }
         ).domNode);
+        dojo.place('<span> Height: </span>', div)
+        div.appendChild(new dijit.form.ValidationTextBox({
+            maxLength: 4,
+            regExp: "[0-9]+",
+            onChange: function(val) {
+                update_img({height: val});
+            }
+        }).domNode);
+        dojo.style(div.lastChild, "width", "4em");
+        dojo.place('<span> Min: </span>', div)
+        div.appendChild(new dijit.form.ValidationTextBox({
+            maxLength: 4,
+            regExp: "[0-9]+",
+            onChange: function(val) {
+                update_img({lower_limit: val});
+            }
+        }).domNode);
+        dojo.style(div.lastChild, "width", "4em");
+        dojo.place('<span> Max: </span>', div)
+        div.appendChild(new dijit.form.ValidationTextBox({
+            maxLength: 4,
+            regExp: "[0-9]+",
+            onChange: function(val) {
+                update_img({upper_limit: val});
+            }
+        }).domNode);
+        dojo.style(div.lastChild, "width", "4em");
+        dojo.place('<span> Step: </span>', div)
+        div.appendChild(new dijit.form.ValidationTextBox({
+            maxLength: 4,
+            regExp: "[0-9]+",
+            onChange: function(val) {
+                update_img({step: val});
+            }
+        }).domNode);
+        dojo.style(div.lastChild, "width", "4em");
+
+        div.appendChild(new dijit.form.Button({
+            label: '-',
+            onClick: function () { dojo.destroy(div); }
+        }).domNode);
+        dojo.style(div.lastChild, "float", "right");
     };
 
     var replaceAll = function(str, orig, repl) {
