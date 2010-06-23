@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import pool
+import pprint
 import pytz
 import re
 import rrdtool
@@ -65,77 +66,112 @@ def get_instances():
     for info, addrs in pool.get_pools():
         customer = info['customer'].lower()
         label = "%(pooltype)s-%(desc)s" % info
-        instances = [by_addr[addr] for addr in addrs
-                     if addr in by_addr]
+        instances = sorted([by_addr[addr] for addr in addrs
+                            if addr in by_addr])
         if len(instances) > 1:
-            all = ("%s-%s," % (customer, label))+(','.join(instances))
+            all = ("%s-%s," % (customer, label)) + (','.join(instances))
+            compare_rpm = (
+                (',rpm,%s-%s-rpm,' % (customer, label))
+                + (','.join(instances)))
+            compare_max_rpm = (
+                (',spr,%s-%s-max-rpm,' % (customer, label))
+                + (','.join(instances)))
             instances = [(inst, inst)
                          for inst in sorted(instances)]
-            instances.insert(0, ('all', all))
+            instances[0:0] = [
+                ('all', all),
+                ('compare rpm', compare_rpm),
+                ('compare max rpm', compare_max_rpm),
+                ]
             cpools = customers.get(customer)
             if cpools is None:
                 cpools = customers[customer] = {}
             cpools[label] = instances
-
-
-    import pprint
-    pprint.pprint(by_addr)
-    pprint.pprint(customers)
 
     return json.dumps(dict(
         customers=sorted((customer, sorted(customers[customer].items()))
                          for customer in customers)
         ))
 
+hex2 = lambda v: ('0'+hex(v)[2:])[-2:]
+
+
+colors = []
+for i in 0, 127, 255:
+    for j in 0, 127, 255:
+        for k in 0, 127, 255:
+            colors.append(hex2(i)+hex2(j)+hex2(k))
+ncolors = len(colors)-1
+
 @bobo.query('/show.png', content_type='image/png')
 def show(instance, start=None, end=None,
          width=900, height=200, step=None,
-         log=None, trail=None):
+         log=None, trail=None, upper_limit=None, lower_limit=None,
+         ):
     log = log == 'y'
 
     lines = []
+    compare = False
     if ',' in instance:
         instances = instance.split(',')
+        if not instances[0]:
+            instances.pop(0)
+            compare = instances.pop(0)
         title = instances.pop(0).replace('-', ' ')
+        ninstances = len(instances)
         n=0
         for instance in instances:
             instance += '.rrd'
             assert inst_rrd(instance)
             rrd_path = os.path.join(rrd_dir, instance)
             assert os.path.exists(rrd_path)
+            if compare:
+                lines.extend([
+                    rrdtool.Def("v%s" % n, rrd_path, data_source=compare,
+                                cf=rrdtool.AverageCF),
+                    "LINE1:v%s#%s:%s" % (
+                        n, colors[(n*ncolors/ninstances) % len(colors)],
+                        instance[:-4]),
+#                     rrdtool.LINE1(
+#                         "v%s" % n, legend=instance,
+#                         rrggbb=colors[(n*ncolors/ninstances) % len(colors)],
+#                         ),
+                    ])
+            else:
+                lines.extend([
+                    rrdtool.Def("rpm%s" % n, rrd_path, data_source="rpm",
+                                cf=rrdtool.AverageCF),
+                    rrdtool.Def("epm%s" % n, rrd_path, data_source="epm",
+                                cf=rrdtool.AverageCF),
+                    rrdtool.Def("bl%s" % n, rrd_path, data_source="bl",
+                                cf=rrdtool.AverageCF),
+                    rrdtool.Def("start%s" % n, rrd_path, data_source="start",
+                                cf=rrdtool.AverageCF),
+                    ])
+                if log:
+                    lines.append(
+                        rrdtool.Def("spr%s" % n, rrd_path, data_source="spr",
+                                    cf=rrdtool.AverageCF),
+                        )
+            n += 1
+        if not compare:
             lines.extend([
-                rrdtool.Def("rpm%s" % n, rrd_path, data_source="rpm",
-                            cf=rrdtool.AverageCF),
-                rrdtool.Def("epm%s" % n, rrd_path, data_source="epm",
-                            cf=rrdtool.AverageCF),
-                rrdtool.Def("bl%s" % n, rrd_path, data_source="bl",
-                            cf=rrdtool.AverageCF),
-                rrdtool.Def("start%s" % n, rrd_path, data_source="start",
-                            cf=rrdtool.AverageCF),
+                "CDEF:rpm=rpm0,%s" % (
+                    ','.join("rpm%s,+" % i for i in range(1, n))),
+                "CDEF:epm=epm0,%s" % (
+                    ','.join("epm%s,+" % i for i in range(1, n))),
+                "CDEF:bl=bl0,%s" % (
+                    ','.join("bl%s,+" % i for i in range(1, n))),
+                "CDEF:start=%s,%s,AVG" % (
+                    ','.join("start%s" % i for i in range(0, n)),
+                    n
+                    ),
                 ])
             if log:
                 lines.append(
-                    rrdtool.Def("spr%s" % n, rrd_path, data_source="spr",
-                                cf=rrdtool.AverageCF),
+                    "CDEF:spr=spr0,%s" % (
+                        ','.join("spr%s,+" % i for i in range(1, n))),
                     )
-            n += 1
-        lines.extend([
-            "CDEF:rpm=rpm0,%s" % (
-                ','.join("rpm%s,+" % i for i in range(1, n))),
-            "CDEF:epm=epm0,%s" % (
-                ','.join("epm%s,+" % i for i in range(1, n))),
-            "CDEF:bl=bl0,%s" % (
-                ','.join("bl%s,+" % i for i in range(1, n))),
-            "CDEF:start=%s,%s,AVG" % (
-                ','.join("start%s" % i for i in range(0, n)),
-                n
-                ),
-            ])
-        if log:
-            lines.append(
-                "CDEF:spr=spr0,%s" % (
-                    ','.join("spr%s,+" % i for i in range(1, n))),
-                )
     else:
         title = instance.replace('__', ' ')
         instance += '.rrd'
@@ -167,6 +203,12 @@ def show(instance, start=None, end=None,
         height=int(height),
         title=title,
         )
+    if upper_limit:
+        options['upper_limit'] = int(upper_limit)
+        options['rigid'] = None
+    if lower_limit:
+        options['lower_limit'] = int(lower_limit)
+        options['rigid'] = None
 
     if trail:
         options['start'] = int(time.time()/60*60-int(trail)*3600)
@@ -179,21 +221,25 @@ def show(instance, start=None, end=None,
     if step:
         options['step'] = int(step)*60
 
-    lines.extend([
-        rrdtool.LINE1("rpm", rrggbb="00ff00", legend="rpm"),
-        rrdtool.LINE1("epm", rrggbb="ff0000", legend="epm"),
-        rrdtool.LINE1("bl", rrggbb="e082e6", legend="waiting"),
-        'TICK:start#00000055:1:start',
-        ])
+    if not compare:
+        lines.extend([
+            rrdtool.LINE1("rpm", rrggbb="00ff00", legend="rpm"),
+            rrdtool.LINE1("epm", rrggbb="ff0000", legend="epm"),
+            rrdtool.LINE1("bl", rrggbb="e082e6", legend="waiting"),
+            'TICK:start#00000055:1:start',
+            ])
 
-    if log:
-        options['logarithmic'] = None
-        lines.append(
-            rrdtool.LINE1("spr", rrggbb="93f9fb", legend="max rpm"),
-            )
+        if log:
+            options['logarithmic'] = None
+            lines.append(
+                rrdtool.LINE1("spr", rrggbb="93f9fb", legend="max rpm"),
+                )
+    else:
+        #lines.append('TICK:start#00000055:1:start')
+        #options['dashes'] = None
 
-    import pprint
-    pprint.pprint(map(str, lines))
+        if log:
+            options['logarithmic'] = None
 
     g.graph(*lines, **options)
 
