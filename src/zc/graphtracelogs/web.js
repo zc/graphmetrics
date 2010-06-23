@@ -53,7 +53,8 @@ zc = function() {
         var div = dojo.create('div',{}, dojo.body())
         var params = {
             instance: inst,
-            bust: 0
+            bust: (new Date()).toString(),
+            width: div.clientWidth
         };
         var img = dojo.create(
             'img', {id: 'img'+imgid,
@@ -61,9 +62,11 @@ zc = function() {
         var update_img = function (ob) {
             if (ob != undefined)
                 dojo.mixin(params, ob);
-            params.bust++;
+            params.bust = (new Date()).toString();
+            params.width = div.clientWidth;
             img.src =  'show.png?'+dojo.objectToQuery(params);
         };
+        dojo.connect(window, 'onresize', update_img);
         var keep_refreshing = function () {
             if (params.end == null)
                 update_img();
@@ -155,7 +158,7 @@ zc = function() {
         dojo.style(div.lastChild, "width", "4em");
 
         div.appendChild(new dijit.form.Button({
-            label: '-',
+            label: 'X',
             onClick: function () { dojo.destroy(div); }
         }).domNode);
         dojo.style(div.lastChild, "float", "right");
