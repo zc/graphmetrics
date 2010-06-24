@@ -1,6 +1,5 @@
 import BTrees.OOBTree
 import bobo
-import boboserver
 import datetime
 import json
 import os
@@ -340,7 +339,3 @@ def parsedt(s):
     t.extend([0]*(8-len(t)))
     t.append(bool(dst(datetime.datetime(*t[:6])).seconds))
     return int(time.mktime(t))
-
-if __name__ == '__main__':
-    main(sys.argv[1:])
-
