@@ -5,16 +5,9 @@ dojo.require("dijit.form.CheckBox");
 dojo.require("dijit.form.TextBox");
 dojo.require("dijit.form.FilteringSelect");
 dojo.require("dojo.data.ItemFileReadStore");
+dojo.require("dojo.date.stamp");
 
 zc = function() {
-    // var data = [{x: 1, y: 1}, {x: 2, y: 2}];
-
-    // var update = function(value) {
-    //     data[0] = {x: 1, y: 2};
-    //     data[1] = {x: 2, y: 1};
-    //     zc.chart1.updateSeries('Series 1', data);
-    //     zc.chart1.render();
-    // };
     var imgid = 0;
     var customers;
 
@@ -48,14 +41,31 @@ zc = function() {
         })
     };
 
-    var newChart = function(inst) {
+    var twodigits = function (i) {
+        var result = i.toString();
+        if (result.length < 2)
+            result = '0' + i;
+        return result;
+    };
+
+    var date2string = function (d) {
+        return (d.getFullYear()
+                + '-' + twodigits(d.getMonth()+1)
+                + '-' + twodigits(d.getDate())
+               );
+    };
+
+    var newChart = function(inst, ob) {
         imgid ++;
-        var div = dojo.create('div',{}, dojo.body())
+        var div = dojo.create('div',{}, dojo.body());
         var params = {
             instance: inst,
             bust: (new Date()).toString(),
-            width: div.clientWidth
+            width: div.clientWidth,
+            imgid: imgid
         };
+        if (ob != undefined)
+            dojo.mixin(params, ob);
         var img = dojo.create(
             'img', {id: 'img'+imgid,
                     src: 'show.png?'+dojo.objectToQuery(params)}, div);
@@ -68,6 +78,8 @@ zc = function() {
         };
         dojo.connect(window, 'onresize', update_img);
         var keep_refreshing = function () {
+            if (keep_refreshing == undefined)
+                return;
             if (params.end == null)
                 update_img();
             setTimeout(keep_refreshing, 60000);
@@ -79,26 +91,33 @@ zc = function() {
             onClick: update_img
         }).domNode);
         div.appendChild(new dijit.form.DateTextBox({
+            value: params.start
+                ? dojo.date.stamp.fromISOString(params.start)
+                : undefined,
             onChange: function(date) {
                 if (date != null)
-                    date = (date.getFullYear()+'-'+(date.getMonth()+1)
-                            +'-'+date.getDate());
+                    date = date2string(date);
+                else
+                    date = undefined;
                 update_img({start: date});
             }
         }).domNode);
         dojo.style(div.lastChild, "width", "8em");
-        dojo.place('<span> to </span>', div)
+        dojo.place('<span>-</span>', div)
         div.appendChild(new dijit.form.DateTextBox({
+            value: params.end
+                ? dojo.date.stamp.fromISOString(params.end)
+                : undefined,
             onChange: function(date) {
                 if (date != null)
-                    date = (date.getFullYear()+'-'+(date.getMonth()+1)
-                            +'-'+date.getDate());
+                    date = date2string(date);
                 update_img({end: date});
             }
         }).domNode);
         dojo.style(div.lastChild, "width", "8em");
         dojo.place('<span> Trail: </span>', div)
         div.appendChild(new dijit.form.ValidationTextBox({
+            value: params.trail,
             maxLength: 3,
             regExp: "[0-9]+",
             onChange: function(val) {
@@ -108,6 +127,7 @@ zc = function() {
         dojo.style(div.lastChild, "width", "4em");
         dojo.place('<span> Log: </span>', div)
         div.appendChild(new dijit.form.CheckBox({
+            checked: params.log == 'y' ? 'checked' : undefined,
             onChange: function(val) {
                 if (val)
                     params.log = 'y';
@@ -122,6 +142,7 @@ zc = function() {
         ).domNode);
         dojo.place('<span> Height: </span>', div)
         div.appendChild(new dijit.form.ValidationTextBox({
+            value: params.height,
             maxLength: 4,
             regExp: "[0-9]+",
             onChange: function(val) {
@@ -131,6 +152,7 @@ zc = function() {
         dojo.style(div.lastChild, "width", "4em");
         dojo.place('<span> Min: </span>', div)
         div.appendChild(new dijit.form.ValidationTextBox({
+            value: params.lower_limit,
             maxLength: 4,
             regExp: "[0-9]+",
             onChange: function(val) {
@@ -140,6 +162,7 @@ zc = function() {
         dojo.style(div.lastChild, "width", "4em");
         dojo.place('<span> Max: </span>', div)
         div.appendChild(new dijit.form.ValidationTextBox({
+            value: params.upper_limit,
             maxLength: 4,
             regExp: "[0-9]+",
             onChange: function(val) {
@@ -149,6 +172,7 @@ zc = function() {
         dojo.style(div.lastChild, "width", "4em");
         dojo.place('<span> Step: </span>', div)
         div.appendChild(new dijit.form.ValidationTextBox({
+            value: params.step,
             maxLength: 4,
             regExp: "[0-9]+",
             onChange: function(val) {
@@ -159,7 +183,15 @@ zc = function() {
 
         div.appendChild(new dijit.form.Button({
             label: 'X',
-            onClick: function () { dojo.destroy(div); }
+            onClick: function () {
+                keep_refreshing = undefined;
+                dojo.xhrGet({
+                    url: 'destroy?imgid='+params.imgid,
+                    load: function () { dojo.destroy(div); },
+                    error: function (error) {alert(error)}
+                });
+                
+            }
         }).domNode);
         dojo.style(div.lastChild, "float", "right");
     };
@@ -175,12 +207,25 @@ zc = function() {
     return {
         init: function()
         {
+            var button_div = dojo.create('div',{}, dojo.body());
             dojo.xhrGet({
                 url: 'get_instances.json',
                 handleAs: 'json',
                 load: function (data) {
                     customers = data.customers;
-                    dojo.body().appendChild(
+
+                    dojo.xhrGet({
+                        url: 'load.json',
+                        handleAs: 'json',
+                        load: function (data) {
+                            for (var i=0; i < data.charts.length; i++) {
+                                newChart('', data.charts[i]);
+                            }
+                        },
+                        error: function (error) {alert(error)}
+                    });
+
+                    button_div.appendChild(
                         newInstanceMenuButton("New chart:", newChart
                                              ).domNode);
                 },
