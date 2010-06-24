@@ -204,9 +204,6 @@ class App:
                                     cf=rrdtool.AverageCF),
                         rrdtool.Def("bl%s" % n, rrd_path, data_source="bl",
                                     cf=rrdtool.AverageCF),
-                        rrdtool.Def("start%s" % n, rrd_path,
-                                    data_source="start",
-                                    cf=rrdtool.AverageCF),
                         ])
                     if log:
                         lines.append(
@@ -214,6 +211,11 @@ class App:
                                         data_source="spr",
                                         cf=rrdtool.AverageCF),
                             )
+                lines.append(
+                    rrdtool.Def("start%s" % n, rrd_path,
+                                data_source="start",
+                                cf=rrdtool.AverageCF)
+                    )
                 n += 1
             if not compare:
                 lines.extend([
@@ -223,16 +225,15 @@ class App:
                         ','.join("epm%s,+" % i for i in range(1, n))),
                     "CDEF:bl=bl0,%s" % (
                         ','.join("bl%s,+" % i for i in range(1, n))),
-                    "CDEF:start=%s,%s,AVG" % (
-                        ','.join("start%s" % i for i in range(0, n)),
-                        n
-                        ),
                     ])
                 if log:
                     lines.append(
                         "CDEF:spr=spr0,%s" % (
                             ','.join("spr%s,+" % i for i in range(1, n))),
                         )
+            lines.append("CDEF:start=%s,%s,AVG" % (
+                ','.join("start%s" % i for i in range(0, n)),
+                n))
         else:
             title = instance.replace('__', ' ')
             instance += '.rrd'
@@ -287,7 +288,6 @@ class App:
                 rrdtool.LINE1("rpm", rrggbb="00ff00", legend="rpm"),
                 rrdtool.LINE1("epm", rrggbb="ff0000", legend="epm"),
                 rrdtool.LINE1("bl", rrggbb="e082e6", legend="waiting"),
-                'TICK:start#00000055:1:start',
                 ])
 
             if log:
@@ -296,11 +296,9 @@ class App:
                     rrdtool.LINE1("spr", rrggbb="93f9fb", legend="max rpm"),
                     )
         else:
-            #lines.append('TICK:start#00000055:1:start')
-            #options['dashes'] = None
-
             if log:
                 options['logarithmic'] = None
+        lines.append('TICK:start#00000055:1:start')
 
         g.graph(*lines, **options)
 
