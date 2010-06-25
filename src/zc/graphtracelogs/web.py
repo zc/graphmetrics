@@ -159,14 +159,15 @@ class App:
             ))
 
     @bobo.query('/show.png', content_type='image/png')
-    def show(self, imgid, instance, start=None, end=None,
+    def show(self, imgid, instance,
+             start=None, end=None, start_time=None, end_time=None,
              width=900, height=None, step=None,
              log=None, trail=None, upper_limit=None, lower_limit=None,
              ):
         params = dict(i for i in dict(
             instance = instance,
-            start = start,
-            end = end,
+            start = start, start_time = start_time,
+            end = end, end_time = end_time,
             height = height,
             step = step,
             log = log,
@@ -174,6 +175,16 @@ class App:
             upper_limit = upper_limit,
             lower_limit = lower_limit,
             ).iteritems() if i[1])
+
+        if start_time:
+            if not start:
+                start = str(datetime.date.today())
+            start += start_time
+
+        if end_time:
+            if not end:
+                end = str(datetime.date.today())
+            end += end_time
 
         log = log == 'y'
 
