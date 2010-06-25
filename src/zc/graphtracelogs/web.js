@@ -5,6 +5,7 @@ dojo.require("dijit.form.CheckBox");
 dojo.require("dijit.form.DateTextBox");
 dojo.require("dijit.form.FilteringSelect");
 dojo.require("dijit.form.TextBox");
+dojo.require("dijit.form.TimeTextBox");
 dojo.require("dojo.data.ItemFileReadStore");
 dojo.require("dojo.date.stamp");
 
@@ -56,6 +57,22 @@ zc = function() {
                );
     };
 
+    var time2string = function (d) {
+        return ('T'
+                + d.getHours()
+                + ':' + twodigits(d.getMinutes())
+                + ':' + twodigits(d.getSeconds())
+               );
+    };
+    var string2time = function (s) {
+        s = s.split('T')[1].split(':');
+        var result = new Date();
+        result.setHours(s[0]);
+        result.setMinutes(s[1]);
+        result.setSeconds(s[2]);
+        return result;
+    };
+
     var newChart = function(inst, ob) {
         imgid ++;
         var div = dojo.create('div',{}, dojo.body());
@@ -77,6 +94,8 @@ zc = function() {
             params.width = div.clientWidth;
             img.src =  'show.png?'+dojo.objectToQuery(params);
         };
+
+        // Reload:
         dojo.connect(window, 'onresize', update_img);
         var keep_refreshing = function () {
             if (keep_refreshing == undefined)
@@ -92,6 +111,7 @@ zc = function() {
             onClick: update_img
         }).domNode);
 
+        // Date range:
         div.appendChild(new dijit.form.DateTextBox({
             value: params.start
                 ? dojo.date.stamp.fromISOString(params.start)
@@ -104,8 +124,23 @@ zc = function() {
                 update_img({start: date});
             }
         }).domNode);
-        dojo.style(div.lastChild, "width", "8em");
-        dojo.place('<span>-</span>', div)
+        dojo.style(div.lastChild, "width", "7em");
+        dojo.place('<span>T</span>', div)
+        div.appendChild(new dijit.form.TimeTextBox({
+            value: params.start_time
+                ? string2time(params.start_time)
+                : undefined,
+            onChange: function(date) {
+                if (date != null)
+                    date = time2string(date);
+                else
+                    date = undefined;
+                update_img({start_time: date});
+            }
+        }).domNode);
+        dojo.style(div.lastChild, "width", "4em");
+
+        dojo.place('<span> to </span>', div)
         div.appendChild(new dijit.form.DateTextBox({
             value: params.end
                 ? dojo.date.stamp.fromISOString(params.end)
@@ -116,7 +151,21 @@ zc = function() {
                 update_img({end: date});
             }
         }).domNode);
-        dojo.style(div.lastChild, "width", "8em");
+        dojo.style(div.lastChild, "width", "7em");
+        dojo.place('<span>T</span>', div)
+        div.appendChild(new dijit.form.TimeTextBox({
+            value: params.end_time
+                ? string2time(params.end_time)
+                : undefined,
+            onChange: function(date) {
+                if (date != null)
+                    date = time2string(date);
+                else
+                    date = undefined;
+                update_img({end_time: date});
+            }
+        }).domNode);
+        dojo.style(div.lastChild, "width", "4em");
 
         dojo.place('<span> Trail: </span>', div)
         div.appendChild(new dijit.form.ValidationTextBox({
