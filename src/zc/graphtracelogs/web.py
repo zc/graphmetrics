@@ -71,18 +71,22 @@ class App:
     def js(self):
         return open(os.path.join(os.path.dirname(__file__), 'web.js')).read()
 
-    @property
-    def definitions(self):
+    def get_definitions(self, user=None):
+        if user is None:
+            user = self.user
+
         root = self.request.environ['zodb.connection'].root()
         try:
             definitions = root['definitions']
         except KeyError:
             definitions = root['definitions'] = BTrees.OOBTree.BTree()
         try:
-            return definitions[self.user]
+            return definitions[user]
         except KeyError:
-            definitions[self.user] = r = BTrees.OOBTree.BTree()
+            definitions[user] = r = BTrees.OOBTree.BTree()
             return r
+
+    definitions = property(get_definitions)
 
     @bobo.query(content_type='application/json')
     def load(self):
@@ -314,7 +318,7 @@ class App:
         os.close(fd)
         return open(img_path).read()
 
-    @bobo.query('/destroy')
+    @bobo.post('/destroy')
     def destroy(self, imgid):
         if self.user == who(self.request):
             defs = self.definitions.get(self.name)
@@ -323,6 +327,22 @@ class App:
             if imgid in defs['charts']:
                 del defs['charts'][imgid]
         return ''
+
+    @bobo.post(content_type='application/json')
+    def save(self, name, overwrite=False):
+        me = who(self.request)
+        definitions = self.get_definitions(me)
+        old = definitions.get(name)
+        if (old is not None) and old['charts'] and not overwrite:
+            return json.dumps(dict(exists=True))
+        new = self.definitions.get(self.name)
+        if (new is not None) and new['charts']:
+            definitions[name] = new
+        else:
+            if old is not None:
+                del definitions[name]
+
+        return json.dumps(dict(url='../../%s/%s' % (me, name)))
 
 dst = pytz.timezone('US/Eastern').dst
 
