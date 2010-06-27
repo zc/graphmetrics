@@ -23,7 +23,6 @@ dojo.require("dojo.date.stamp");
     
     var keep_refreshing = function () {
         for (var i in charts) {
-            console.log('refresh'+i);
             charts[i].refresh();
         }
         setTimeout(keep_refreshing, 60000);
@@ -289,6 +288,7 @@ dojo.require("dojo.date.stamp");
 
     dojo.addOnLoad(function() {
         var button_div = dojo.create('div',{}, dojo.body());
+        dojo.create('div', {innerHTML: 'wait for it ...'}, button_div);
         var save_dialog = new dijit.Dialog({
             title: 'Save as:',
             style: 'width: 20em'
@@ -352,6 +352,7 @@ dojo.require("dojo.date.stamp");
                             params.imgid = data.imgids[i];
                             new Chart(params);
                         }
+                        dojo.destroy(button_div.firstChild);
                     },
                     error: function (error) {alert(error)}
                 });
