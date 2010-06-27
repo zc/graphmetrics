@@ -2,6 +2,7 @@ import BTrees.OOBTree
 import bobo
 import datetime
 import json
+import logging
 import os
 import persistent.mapping
 import pool
@@ -20,7 +21,11 @@ numbered_instance = re.compile('instance(\d+)$').match
 def config(config):
     global rrd_dir
     rrd_dir = config['rrd']
-
+    if 'logging' in config:
+        if not getattr(logging, 'been_configured', False):
+            import ZConfig
+            ZConfig.configureLoggers(config['logging'].replace('$(', '%('))
+            logging.been_configured = True
 
 port_funcs = dict(
     ghm = (lambda i: (i+8)*1000+80),
@@ -47,6 +52,8 @@ def who(request):
 @bobo.resource('/')
 def home(request):
     return bobo.redirect('%s/default/' % who(request))
+
+BIG = 1<<31
 
 @bobo.subroute('/:user/:name', scan=True)
 class App:
@@ -94,10 +101,10 @@ class App:
         if defs is None:
             result = dict(charts=[])
         else:
+            charts = sorted(defs['charts'].iteritems())
             result = dict(
-                charts=[i[1]
-                        for i in sorted(defs['charts'].iteritems())
-                        ]
+                charts=[i[1] for i in charts],
+                imgids=[i[0] for i in charts],
                 )
         return json.dumps(result)
 
@@ -159,7 +166,7 @@ class App:
             ))
 
     @bobo.query('/show.png', content_type='image/png')
-    def show(self, imgid, instance,
+    def show(self, imgid, instance, generation=0,
              start=None, end=None, start_time=None, end_time=None,
              width=900, height=None, step=None,
              log=None, trail=None, upper_limit=None, lower_limit=None,
@@ -174,6 +181,7 @@ class App:
             trail=trail,
             upper_limit = upper_limit,
             lower_limit = lower_limit,
+            generation = generation,
             ).iteritems() if i[1])
 
         if start_time:
@@ -317,26 +325,43 @@ class App:
 
         g.graph(*lines, **options)
 
+        updated = ''
         if self.user == who(self.request):
             defs = self.definitions.get(self.name)
             if defs is None:
                 defs = persistent.mapping.PersistentMapping(
-                    charts=persistent.mapping.PersistentMapping())
+                    charts=BTrees.OOBTree.BTree())
                 self.definitions[self.name] = defs
-            if params != defs['charts'].get(imgid):
+            old = defs['charts'].get(imgid)
+            if ((not old)
+                or (params != old
+                    and (params.get('generation', BIG)
+                         > old.get('generation', 0)
+                         )
+                    )
+                ):
                 defs['charts'][imgid] = params
+                updated = ' updated'
 
         os.close(fd)
+        logging.info("%r show %r %r %r%s",
+                     who(self.request), self.user, self.name, imgid, updated)
         return open(img_path).read()
 
     @bobo.post('/destroy')
     def destroy(self, imgid):
+        logging.info("%r destroy %r %r %r",
+                     who(self.request), self.user, self.name, imgid)
         if self.user == who(self.request):
             defs = self.definitions.get(self.name)
             if defs is None:
                 return
             if imgid in defs['charts']:
                 del defs['charts'][imgid]
+                if not defs['charts']:
+                    del self.definitions[self.name]
+                    return 'empty'
+                return 'destroyed %r' % defs['charts']._p_oid
         return ''
 
     @bobo.post(content_type='application/json')
