@@ -13,7 +13,7 @@ dojo.require("dojo.date.stamp");
 (function() {
     var imgid = 0;
     var customers;
-    var charts = {};
+    charts = {};
 
     var update_on_resize = function () {
         for (var i in charts)
@@ -22,8 +22,10 @@ dojo.require("dojo.date.stamp");
     dojo.connect(window, 'onresize', update_on_resize);
     
     var keep_refreshing = function () {
-        for (var i in charts)
+        for (var i in charts) {
+            console.log('refresh'+i);
             charts[i].refresh();
+        }
         setTimeout(keep_refreshing, 60000);
     };
     setTimeout(keep_refreshing, 60000);
@@ -140,9 +142,9 @@ dojo.require("dojo.date.stamp");
         params.bust = (new Date()).toString();
         params.width = div.clientWidth;
         if (params.imgid)
-            imgid = params.imgid > imgid ? params.imgid : imgid;
+            imgid = Math.max(params.imgid, imgid);
         else {
-            imgid ++;
+            imgid++;
             params.imgid = imgid;
         }
         var img = dojo.create(
@@ -156,6 +158,10 @@ dojo.require("dojo.date.stamp");
             img.src =  'show.png?'+dojo.objectToQuery(params);
         };
         this.update = update;
+        var changed = function (ob) {
+            params.generation = (params.generation || 0) + 1;
+            update(ob);
+        }
 
         this.refresh = function () {
             if (! params.end && ! params.end_time)
@@ -172,22 +178,22 @@ dojo.require("dojo.date.stamp");
         this.update_settings = function (settings) {
             for (var i=0; i < uis.length; i++)
                 uis[i].update(settings);
-            update(settings);
+            changed(settings);
         };
 
-        uis.push(new DateTimeUI(div, params, 'start', update));
+        uis.push(new DateTimeUI(div, params, 'start', changed));
         dojo.place('<span> to </span>', div)
-        uis.push(new DateTimeUI(div, params, 'end', update));
+        uis.push(new DateTimeUI(div, params, 'end', changed));
 
-        uis.push(new TextUI(div, 'Trail', params, 'trail', update,
+        uis.push(new TextUI(div, 'Trail', params, 'trail', changed,
                             3, "[0-9]+"));
-        uis.push(new TextUI(div, 'Step', params, 'step', update,
+        uis.push(new TextUI(div, 'Step', params, 'step', changed,
                             4, "[0-9]+"));
-        uis.push(new TextUI(div, 'Min', params, 'lower_limit', update,
+        uis.push(new TextUI(div, 'Min', params, 'lower_limit', changed,
                             6, "[0-9]+"));
-        uis.push(new TextUI(div, 'Max', params, 'upper_limit', update,
+        uis.push(new TextUI(div, 'Max', params, 'upper_limit', changed,
                             9, "[0-9]+"));
-        uis.push(new BoolUI(div, 'Log', params, 'log', update));
+        uis.push(new BoolUI(div, 'Log', params, 'log', changed));
 
         // Apply same scaling
         div.appendChild(new dijit.form.Button({
@@ -217,7 +223,7 @@ dojo.require("dojo.date.stamp");
         // Select data to show
         div.appendChild(newInstanceMenuButton(
             "Instance:",
-            function(val){ update({instance: val}); }
+            function(val){ changed({instance: val}); }
         ).domNode);
 
         dojo.place('<span> Height: </span>', div)
@@ -226,7 +232,7 @@ dojo.require("dojo.date.stamp");
             maxLength: 4,
             regExp: "[0-9]+",
             onChange: function(val) {
-                update({height: val});
+                changed({height: val});
             }
         }).domNode);
         dojo.style(div.lastChild, "width", "4em");
@@ -234,7 +240,6 @@ dojo.require("dojo.date.stamp");
         div.appendChild(new dijit.form.Button({
             label: 'X',
             onClick: function () {
-                keep_refreshing = undefined;
                 dojo.xhrPost({
                     url: 'destroy',
                     postData: 'imgid='+params.imgid, 
@@ -343,7 +348,9 @@ dojo.require("dojo.date.stamp");
                     handleAs: 'json',
                     load: function (data) {
                         for (var i=0; i < data.charts.length; i++) {
-                            new Chart(data.charts[i]);
+                            params = data.charts[i];
+                            params.imgid = data.imgids[i];
+                            new Chart(params);
                         }
                     },
                     error: function (error) {alert(error)}
