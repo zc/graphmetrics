@@ -6,12 +6,251 @@ dojo.require("dijit.form.DateTextBox");
 dojo.require("dijit.form.FilteringSelect");
 dojo.require("dijit.form.TextBox");
 dojo.require("dijit.form.TimeTextBox");
+dojo.require("dijit.Tooltip");
 dojo.require("dojo.data.ItemFileReadStore");
 dojo.require("dojo.date.stamp");
 
-zc = function() {
+(function() {
     var imgid = 0;
     var customers;
+    var charts = {};
+
+    var update_on_resize = function () {
+        for (var i in charts)
+            charts[i].update();
+    };
+    dojo.connect(window, 'onresize', update_on_resize);
+    
+    var keep_refreshing = function () {
+        for (var i in charts)
+            charts[i].refresh();
+        setTimeout(keep_refreshing, 60000);
+    };
+    setTimeout(keep_refreshing, 60000);
+
+    var twodigits = function (i) {
+        var result = i.toString();
+        if (result.length < 2)
+            result = '0' + i;
+        return result;
+    };
+    var date2string = function (d) {
+        if (d)
+            return (d.getFullYear()
+                    + '-' + twodigits(d.getMonth()+1)
+                    + '-' + twodigits(d.getDate())
+                   );
+        return undefined;
+    };
+    var string2date = function (s) {
+        if (s)
+            return dojo.date.stamp.fromISOString(s);
+        return undefined;
+    };
+    var time2string = function (d) {
+        if (d)
+            return ('T'
+                    + d.getHours()
+                    + ':' + twodigits(d.getMinutes())
+                    + ':' + twodigits(d.getSeconds())
+                   );
+        return undefined;
+    };
+    var string2time = function (s) {
+        if (s) {
+            var result = new Date();
+            s = s.split('T')[1].split(':');
+            result.setHours(s[0]);
+            result.setMinutes(s[1]);
+            result.setSeconds(s[2]);
+            return result;
+        }
+        return undefined;
+    };
+
+    var DateTimeUI = function (div, params, name, update) {
+        var date_widget = new dijit.form.DateTextBox({
+            value: string2date(params[name]),
+            onChange: function(date) {
+                params[name] = date2string(date);
+                update();
+            }
+        });
+        div.appendChild(date_widget.domNode);
+        dojo.style(div.lastChild, "width", "7em");
+        dojo.place('<span>T</span>', div)
+        var time_widget = new dijit.form.TimeTextBox({
+            value: string2time(params[name+'_time']),
+            onChange: function(time) {
+                params[name+'_time'] = time2string(time);
+                update();
+            }
+        });
+        div.appendChild(time_widget.domNode);
+        dojo.style(div.lastChild, "width", "4em");
+
+        this.update = function (settings) {
+            date_widget.attr('value', string2date(settings[name]) || null);
+            time_widget.attr('value',
+                             string2time(settings[name+'_time']) || null);
+        };
+    };
+
+    var TextUI = function (div, label, params, name, update, length, regex) {
+        var widget = new dijit.form.ValidationTextBox({
+            value: params[name],
+            maxLength: length,
+            regExp: regex,
+            onChange: function(val) {
+                params[name] = val;
+                update();
+            }
+        });
+        dojo.place('<span> '+label+': </span>', div)
+        div.appendChild(widget.domNode);
+        dojo.style(div.lastChild, "width", length+"em");
+
+        this.update = function (settings) {
+            widget.attr('value', settings[name] || null);
+        };
+    };
+
+    var BoolUI = function (div, label, params, name, update) {
+        var widget = new dijit.form.CheckBox({
+            checked: params[name] == 'y' ? 'checked': undefined,
+            onChange: function(val) {
+                if (val)
+                    params[name] = 'y';
+                else
+                    params[name] = undefined;
+                update();
+            }
+        });
+        dojo.place('<span> '+label+': </span>', div)
+        div.appendChild(widget.domNode);
+
+        this.update = function (settings) {
+            widget.attr('checked',
+                        settings[name] == 'y' ? 'checked': undefined);
+        };
+    };
+
+    var Chart = function (params) {
+        var div = dojo.create('div',{}, dojo.body());
+        params.bust = (new Date()).toString();
+        params.width = div.clientWidth;
+        if (params.imgid)
+            imgid = params.imgid > imgid ? params.imgid : imgid;
+        else {
+            imgid ++;
+            params.imgid = imgid;
+        }
+        var img = dojo.create(
+            'img', {id: 'img'+imgid,
+                    src: 'show.png?'+dojo.objectToQuery(params)}, div);
+        var update = function (ob) {
+            if (ob != undefined)
+                dojo.mixin(params, ob);
+            params.bust = (new Date()).toString();
+            params.width = div.clientWidth;
+            img.src =  'show.png?'+dojo.objectToQuery(params);
+        };
+        this.update = update;
+
+        this.refresh = function () {
+            if (! params.end && ! params.end_time)
+                update();
+        };
+
+        dojo.create('br', {}, div);
+        div.appendChild(new dijit.form.Button({
+            label: 'Reload',
+            onClick: update
+        }).domNode);
+
+        var uis = [];
+        this.update_settings = function (settings) {
+            for (var i=0; i < uis.length; i++)
+                uis[i].update(settings);
+            update(settings);
+        };
+
+        uis.push(new DateTimeUI(div, params, 'start', update));
+        dojo.place('<span> to </span>', div)
+        uis.push(new DateTimeUI(div, params, 'end', update));
+
+        uis.push(new TextUI(div, 'Trail', params, 'trail', update,
+                            3, "[0-9]+"));
+        uis.push(new TextUI(div, 'Step', params, 'step', update,
+                            4, "[0-9]+"));
+        uis.push(new TextUI(div, 'Min', params, 'lower_limit', update,
+                            6, "[0-9]+"));
+        uis.push(new TextUI(div, 'Max', params, 'upper_limit', update,
+                            9, "[0-9]+"));
+        uis.push(new BoolUI(div, 'Log', params, 'log', update));
+
+        // Apply same scaling
+        div.appendChild(new dijit.form.Button({
+            label: 'A',
+            id: 'all_button_'+imgid,
+            onClick: function () {
+                var settings = {};
+                dojo.forEach([
+                    'start', 'start_time', 'end', 'end_time', 'trail', 'step',
+                    'lower_limit', 'upper_limit', 'log'
+                ], function (name) {
+                    if (params[name])
+                        settings[name] = params[name];
+                });
+                for (var i in charts) {
+                    if (i != params.imgid)
+                        charts[i].update_settings(settings);
+                }
+            }
+        }).domNode);
+        new dijit.Tooltip({
+            connectId: ['all_button_'+imgid],
+            label: 'Apply this scaling to all charts',
+
+        });
+
+        // Select data to show
+        div.appendChild(newInstanceMenuButton(
+            "Instance:",
+            function(val){ update({instance: val}); }
+        ).domNode);
+
+        dojo.place('<span> Height: </span>', div)
+        div.appendChild(new dijit.form.ValidationTextBox({
+            value: params.height,
+            maxLength: 4,
+            regExp: "[0-9]+",
+            onChange: function(val) {
+                update({height: val});
+            }
+        }).domNode);
+        dojo.style(div.lastChild, "width", "4em");
+
+        div.appendChild(new dijit.form.Button({
+            label: 'X',
+            onClick: function () {
+                keep_refreshing = undefined;
+                dojo.xhrPost({
+                    url: 'destroy',
+                    postData: 'imgid='+params.imgid, 
+                    load: function () {
+                        dojo.destroy(div);
+                        delete charts[params['imgid']];
+                    },
+                    error: function (error) {alert(error)}
+                });
+
+            }
+        }).domNode);
+        dojo.style(div.lastChild, "float", "right");
+
+        charts[params.imgid] = this;
+    };
 
     var newInstanceMenuButton = function(label, instfunc) {
         var customer_menu = new dijit.Menu({ style: "display: none;" });
@@ -43,308 +282,85 @@ zc = function() {
         })
     };
 
-    var twodigits = function (i) {
-        var result = i.toString();
-        if (result.length < 2)
-            result = '0' + i;
-        return result;
-    };
-
-    var date2string = function (d) {
-        return (d.getFullYear()
-                + '-' + twodigits(d.getMonth()+1)
-                + '-' + twodigits(d.getDate())
-               );
-    };
-
-    var time2string = function (d) {
-        return ('T'
-                + d.getHours()
-                + ':' + twodigits(d.getMinutes())
-                + ':' + twodigits(d.getSeconds())
-               );
-    };
-    var string2time = function (s) {
-        s = s.split('T')[1].split(':');
-        var result = new Date();
-        result.setHours(s[0]);
-        result.setMinutes(s[1]);
-        result.setSeconds(s[2]);
-        return result;
-    };
-
-    var newChart = function(inst, ob) {
-        imgid ++;
-        var div = dojo.create('div',{}, dojo.body());
-        var params = {
-            instance: inst,
-            bust: (new Date()).toString(),
-            width: div.clientWidth,
-            imgid: imgid
-        };
-        if (ob != undefined)
-            dojo.mixin(params, ob);
-        var img = dojo.create(
-            'img', {id: 'img'+imgid,
-                    src: 'show.png?'+dojo.objectToQuery(params)}, div);
-        var update_img = function (ob) {
-            if (ob != undefined)
-                dojo.mixin(params, ob);
-            params.bust = (new Date()).toString();
-            params.width = div.clientWidth;
-            img.src =  'show.png?'+dojo.objectToQuery(params);
-        };
-
-        // Reload:
-        dojo.connect(window, 'onresize', update_img);
-        var keep_refreshing = function () {
-            if (keep_refreshing == undefined)
-                return;
-            if (params.end == null)
-                update_img();
-            setTimeout(keep_refreshing, 60000);
-        };
-        setTimeout(keep_refreshing, 60000);
-        dojo.create('br', {}, div);
-        div.appendChild(new dijit.form.Button({
-            label: 'Reload',
-            onClick: update_img
+    dojo.addOnLoad(function() {
+        var button_div = dojo.create('div',{}, dojo.body());
+        var save_dialog = new dijit.Dialog({
+            title: 'Save as:',
+            style: 'width: 20em'
+        });
+        var save_name;
+        save_dialog.containerNode.appendChild(
+            new dijit.form.ValidationTextBox({
+                regExp: "[0-9a-zA-z_.-]+",
+                onChange: function (val) { save_name = val; }
+            }).domNode);
+        save_dialog.containerNode.appendChild(new dijit.form.Button({
+            label: 'Cancel',
+            onClick: function () { save_dialog.hide(); }
         }).domNode);
-
-        // Date range:
-        div.appendChild(new dijit.form.DateTextBox({
-            value: params.start
-                ? dojo.date.stamp.fromISOString(params.start)
-                : undefined,
-            onChange: function(date) {
-                if (date != null)
-                    date = date2string(date);
-                else
-                    date = undefined;
-                update_img({start: date});
-            }
-        }).domNode);
-        dojo.style(div.lastChild, "width", "7em");
-        dojo.place('<span>T</span>', div)
-        div.appendChild(new dijit.form.TimeTextBox({
-            value: params.start_time
-                ? string2time(params.start_time)
-                : undefined,
-            onChange: function(date) {
-                if (date != null)
-                    date = time2string(date);
-                else
-                    date = undefined;
-                update_img({start_time: date});
-            }
-        }).domNode);
-        dojo.style(div.lastChild, "width", "4em");
-
-        dojo.place('<span> to </span>', div)
-        div.appendChild(new dijit.form.DateTextBox({
-            value: params.end
-                ? dojo.date.stamp.fromISOString(params.end)
-                : undefined,
-            onChange: function(date) {
-                if (date != null)
-                    date = date2string(date);
-                update_img({end: date});
-            }
-        }).domNode);
-        dojo.style(div.lastChild, "width", "7em");
-        dojo.place('<span>T</span>', div)
-        div.appendChild(new dijit.form.TimeTextBox({
-            value: params.end_time
-                ? string2time(params.end_time)
-                : undefined,
-            onChange: function(date) {
-                if (date != null)
-                    date = time2string(date);
-                else
-                    date = undefined;
-                update_img({end_time: date});
-            }
-        }).domNode);
-        dojo.style(div.lastChild, "width", "4em");
-
-        dojo.place('<span> Trail: </span>', div)
-        div.appendChild(new dijit.form.ValidationTextBox({
-            value: params.trail,
-            maxLength: 3,
-            regExp: "[0-9]+",
-            onChange: function(val) {
-                update_img({trail: val});
-            }
-        }).domNode);
-        dojo.style(div.lastChild, "width", "4em");
-
-        dojo.place('<span> Step: </span>', div)
-        div.appendChild(new dijit.form.ValidationTextBox({
-            value: params.step,
-            maxLength: 4,
-            regExp: "[0-9]+",
-            onChange: function(val) {
-                update_img({step: val});
-            }
-        }).domNode);
-        dojo.style(div.lastChild, "width", "4em");
-
-        dojo.place('<span> Min: </span>', div)
-        div.appendChild(new dijit.form.ValidationTextBox({
-            value: params.lower_limit,
-            maxLength: 4,
-            regExp: "[0-9]+",
-            onChange: function(val) {
-                update_img({lower_limit: val});
-            }
-        }).domNode);
-        dojo.style(div.lastChild, "width", "4em");
-
-        dojo.place('<span> Max: </span>', div)
-        div.appendChild(new dijit.form.ValidationTextBox({
-            value: params.upper_limit,
-            maxLength: 4,
-            regExp: "[0-9]+",
-            onChange: function(val) {
-                update_img({upper_limit: val});
-            }
-        }).domNode);
-        dojo.style(div.lastChild, "width", "4em");
-
-        dojo.place('<span> Log: </span>', div)
-        div.appendChild(new dijit.form.CheckBox({
-            checked: params.log == 'y' ? 'checked' : undefined,
-            onChange: function(val) {
-                if (val)
-                    params.log = 'y';
-                else
-                    params.log = 'n';
-                update_img();
-            }
-        }).domNode);
-
-        div.appendChild(newInstanceMenuButton(
-            "Instance:",
-            function(val){ update_img({instance: val}); }
-        ).domNode);
-
-        dojo.place('<span> Height: </span>', div)
-        div.appendChild(new dijit.form.ValidationTextBox({
-            value: params.height,
-            maxLength: 4,
-            regExp: "[0-9]+",
-            onChange: function(val) {
-                update_img({height: val});
-            }
-        }).domNode);
-        dojo.style(div.lastChild, "width", "4em");
-
-        div.appendChild(new dijit.form.Button({
-            label: 'X',
-            onClick: function () {
-                keep_refreshing = undefined;
+        save_dialog.containerNode.appendChild(new dijit.form.Button({
+            label: 'OK',
+            onClick: function() {
+                save_dialog.hide();
+                if (! save_name)
+                    return;
                 dojo.xhrPost({
-                    url: 'destroy',
-                    postData: 'imgid='+params.imgid, 
-                    load: function () { dojo.destroy(div); },
+                    url: 'save.json',
+                    postData: 'name='+save_name,
+                    handleAs: 'json',
+                    load: function (data) {
+                        if (data.exists) {
+                            if (confirm('Overwrite '+save_name+'?')) {
+                                dojo.xhrPost({
+                                    url: 'save.json',
+                                    postData: dojo.objectToQuery({
+                                        name: save_name,
+                                        overwrite: 'y',
+                                    }),
+                                    handleAs: 'json',
+                                    load: function (data) {
+                                        window.location.assign(
+                                            data.url);
+                                    }
+                                });
+                            }
+                        }
+                        else
+                            window.location.assign(data.url);
+                    },
                     error: function (error) {alert(error)}
                 });
-                
             }
         }).domNode);
-        dojo.style(div.lastChild, "float", "right");
-    };
+        dojo.xhrGet({
+            url: 'get_instances.json',
+            handleAs: 'json',
+            load: function (data) {
+                customers = data.customers;
 
-    var replaceAll = function(str, orig, repl) {
-        while (1) {
-            var news = str.replace(orig, repl)
-            if (news == str) return str;
-            str = news;
-        }
-    };
+                dojo.xhrGet({
+                    url: 'load.json',
+                    handleAs: 'json',
+                    load: function (data) {
+                        for (var i=0; i < data.charts.length; i++) {
+                            new Chart(data.charts[i]);
+                        }
+                    },
+                    error: function (error) {alert(error)}
+                });
 
-    return {
-        init: function()
-        {
-            var button_div = dojo.create('div',{}, dojo.body());
-            var save_dialog = new dijit.Dialog({
-                title: 'Save as:',
-                style: 'width: 20em'
-            });
-            var save_name;
-            save_dialog.containerNode.appendChild(
-                new dijit.form.ValidationTextBox({
-                    regExp: "[0-9a-zA-z_.-]+",
-                    onChange: function (val) { save_name = val; }
-                }).domNode);
-            save_dialog.containerNode.appendChild(new dijit.form.Button({
-                label: 'Cancel',
-                onClick: function () { save_dialog.hide(); }
-            }).domNode);
-            save_dialog.containerNode.appendChild(new dijit.form.Button({
-                label: 'OK',
-                onClick: function() {
-                    save_dialog.hide();
-                    if (! save_name)
-                        return;
-                    dojo.xhrPost({
-                        url: 'save.json',
-                        postData: 'name='+save_name,
-                        handleAs: 'json',
-                        load: function (data) {
-                            if (data.exists) {
-                                if (confirm('Overwrite '+save_name+'?')) {
-                                    dojo.xhrPost({
-                                        url: 'save.json',
-                                        postData: dojo.objectToQuery({
-                                            name: save_name,
-                                            overwrite: 'y',
-                                        }),
-                                        handleAs: 'json',
-                                        load: function (data) {
-                                            window.location.assign(
-                                                data.url);
-                                        }
-                                    });
-                                }
-                            }
-                            else
-                                window.location.assign(data.url);
-                        },
-                        error: function (error) {alert(error)}
-                    });
-                }
-            }).domNode);
-            dojo.xhrGet({
-                url: 'get_instances.json',
-                handleAs: 'json',
-                load: function (data) {
-                    customers = data.customers;
-
-                    dojo.xhrGet({
-                        url: 'load.json',
-                        handleAs: 'json',
-                        load: function (data) {
-                            for (var i=0; i < data.charts.length; i++) {
-                                newChart('', data.charts[i]);
-                            }
-                        },
-                        error: function (error) {alert(error)}
-                    });
-
-                    button_div.appendChild(
-                        newInstanceMenuButton("New chart:", newChart
-                                             ).domNode);
-                    button_div.appendChild(new dijit.form.Button({
-                        label: 'Save',
-                        onClick: function () { save_dialog.show(); }
+                button_div.appendChild(
+                    newInstanceMenuButton("New chart:", function (inst) {
+                        new Chart({instance: inst})
                     }).domNode);
+                button_div.appendChild(new dijit.form.Button({
+                    label: 'Save',
+                    onClick: function () { save_dialog.show(); }
+                }).domNode);
 
-                },
-                error: function (error) {alert(error)}
-            });
-        }
-    }
-}();
+            },
+            error: function (error) {alert(error)}
+        });
+    });
+})();
 
-dojo.addOnLoad(zc.init);
