@@ -13,7 +13,7 @@ dojo.require("dojo.date.stamp");
 (function() {
     var imgid = 0;
     var customers;
-    charts = {};
+    var charts = {};
 
     var update_on_resize = function () {
         for (var i in charts)
@@ -78,7 +78,7 @@ dojo.require("dojo.date.stamp");
             }
         });
         div.appendChild(date_widget.domNode);
-        dojo.style(div.lastChild, "width", "7em");
+        dojo.style(div.lastChild, "width", "12ch");
         dojo.place('<span>T</span>', div)
         var time_widget = new dijit.form.TimeTextBox({
             value: string2time(params[name+'_time']),
@@ -88,7 +88,7 @@ dojo.require("dojo.date.stamp");
             }
         });
         div.appendChild(time_widget.domNode);
-        dojo.style(div.lastChild, "width", "4em");
+        dojo.style(div.lastChild, "width", "10ch");
 
         this.update = function (settings) {
             date_widget.attr('value', string2date(settings[name]) || null);
@@ -109,7 +109,7 @@ dojo.require("dojo.date.stamp");
         });
         dojo.place('<span> '+label+': </span>', div)
         div.appendChild(widget.domNode);
-        dojo.style(div.lastChild, "width", length+"em");
+        dojo.style(widget.domNode, "width", (length+3)+"ch");
 
         this.update = function (settings) {
             widget.attr('value', settings[name] || null);
@@ -185,7 +185,7 @@ dojo.require("dojo.date.stamp");
         uis.push(new DateTimeUI(div, params, 'end', changed));
 
         uis.push(new TextUI(div, 'Trail', params, 'trail', changed,
-                            3, "[0-9]+"));
+                            3, "^[0-9]+$"));
         uis.push(new TextUI(div, 'Step', params, 'step', changed,
                             4, "[0-9]+"));
         uis.push(new TextUI(div, 'Min', params, 'lower_limit', changed,
@@ -234,7 +234,7 @@ dojo.require("dojo.date.stamp");
                 changed({height: val});
             }
         }).domNode);
-        dojo.style(div.lastChild, "width", "4em");
+        dojo.style(div.lastChild, "width", "4ch");
 
         div.appendChild(new dijit.form.Button({
             label: 'X',
