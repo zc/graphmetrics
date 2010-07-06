@@ -20,6 +20,9 @@ import os
 from setuptools import setup, find_packages
 
 entry_points = """
+[console_scripts]
+collect_tracelogs = zc.graphtracelogs.collecttracelogs:main
+collect_metrics = zc.graphtracelogs.collectmetrics:main
 """
 
 setup(

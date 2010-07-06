@@ -18,8 +18,6 @@ def tliter(f, lineno=0):
             minute = date + time.rsplit(':', 1)[0]
             yield (instance, typ, rid, parsedt(date, time), minute, args,
                    lineno, line)
-#             if lineno%10000 == 0:
-#                 print lineno, instance, date, time
         except:
             logging.exception('Bad log record line %r: %r', lineno, line)
 
@@ -38,6 +36,9 @@ def parsedt(date, time):
         ))
 
 def rrdcreate(rrd, t):
+    f = open('.updated', 'w')
+    f.write(rrd)
+    f.close()
     rrd.create(
         rrdtool.DataSource('rpm', rrdtool.GaugeDST),
         rrdtool.DataSource('epm', rrdtool.GaugeDST),
