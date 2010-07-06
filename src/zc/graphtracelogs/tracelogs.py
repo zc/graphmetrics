@@ -15,6 +15,8 @@ import sys
 import tempfile
 import time
 
+dojoroot = 'http://ajax.googleapis.com/ajax/libs/dojo/1.4.3'
+
 inst_rrd = re.compile(r'\S+__\S+__\S+.rrd$').match
 numbered_instance = re.compile('instance(\d+)$').match
 
@@ -71,8 +73,7 @@ class App:
 
     @bobo.query('/')
     def index(self):
-        return open(os.path.join(os.path.dirname(__file__), 'index.html')
-                    ).read()
+        return index_html
 
     @bobo.query('/web.js', content_type="text/javascript")
     def js(self):
@@ -394,3 +395,17 @@ def parsedt(s):
     t.extend([0]*(8-len(t)))
     t.append(bool(dst(datetime.datetime(*t[:6])).seconds))
     return int(time.mktime(t))
+
+index_html = """
+<html><head><title>Tracelog Graphs</title>
+<style type="text/css">
+@import "%(dojoroot)s/dojo/resources/dojo.css";
+@import "%(dojoroot)s/dijit/themes/tundra/tundra.css";
+@import "%(dojoroot)s/dojox/grid/resources/Grid.css";
+</style>
+<script type="text/javascript"
+        src="%(dojoroot)s/dojo/dojo.xd.js.uncompressed.js"
+        djConfig="isDebug: true"></script>
+<script type="text/javascript" src="web.js"></script>
+</head><body class="tundra"></body></html>
+""" % globals()
