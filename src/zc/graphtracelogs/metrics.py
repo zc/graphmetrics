@@ -24,12 +24,7 @@ def config(config):
 
 def config(config):
     global rrd_dir
-    rrd_dir = config['rrd']
-    if 'logging' in config:
-        if not getattr(logging, 'been_configured', False):
-            import ZConfig
-            ZConfig.configureLoggers(config['logging'].replace('$(', '%('))
-            logging.been_configured = True
+    rrd_dir = config['metrics-rrd']
 
 def who(request):
     if 'HTTP_AUTHORIZATION' in request.environ:
