@@ -35,9 +35,9 @@ def parsedt(date, time):
         [ms]
         ))
 
-def rrdcreate(rrd, t):
+def rrdcreate(rrd, t, name):
     f = open('.updated', 'w')
-    f.write(rrd)
+    f.write(name)
     f.close()
     rrd.create(
         rrdtool.DataSource('rpm', rrdtool.GaugeDST),
@@ -66,7 +66,7 @@ class Instance(dict):
         self.rrd = rrdtool.RoundRobinDatabase(rrd_path)
         if not os.path.exists(rrd_path):
             self.rrd_last = minute2ts(minute)-60
-            rrdcreate(self.rrd, self.rrd_last)
+            rrdcreate(self.rrd, self.rrd_last, name)
         else:
             self.rrd_last = self.rrd.last()
         self.reset()
