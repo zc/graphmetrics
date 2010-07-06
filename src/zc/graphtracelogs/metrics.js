@@ -368,7 +368,7 @@ dojo.addOnLoad(function() {
                         width: 'auto',
                         name: 'Series',
                         formatter: function (v) {
-                            return v.split(',').join('<br />')
+                            return v ? v.split(',').join('<br />') : '';
                         }
                     }
                 ],
@@ -711,8 +711,8 @@ dojo.addOnLoad(function() {
             button_div.appendChild(new dijit.form.Button({
                 label: "+",
                 onClick: function () {
-                    plotDialog([], function (data) {
-                        new Chart(plotdata2plotparams(data))
+                    plotDialog('', [], function (title, data) {
+                        new Chart(plotdata2plotparams(data, {title: title}));
                     });
                 }
             }).domNode);
