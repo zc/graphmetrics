@@ -76,7 +76,8 @@ class App:
 
     @bobo.query('/web.js', content_type="text/javascript")
     def js(self):
-        return open(os.path.join(os.path.dirname(__file__), 'web.js')).read()
+        return open(os.path.join(os.path.dirname(__file__), 'tracelogs.js')
+                    ).read()
 
     def get_definitions(self, user=None):
         if user is None:
