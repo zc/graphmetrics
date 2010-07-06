@@ -19,12 +19,9 @@ inst_rrd = re.compile(r'\S+__\S+__\S+.rrd$').match
 numbered_instance = re.compile('instance(\d+)$').match
 
 def config(config):
-    global rrd_dir
-    rrd_dir = config['rrd']
-
-def config(config):
-    global rrd_dir
+    global rrd_dir, rrd_updated
     rrd_dir = config['metrics-rrd']
+    rrd_updated = os.path.join(rrd_dir, '.updated')
 
 def who(request):
     if 'HTTP_AUTHORIZATION' in request.environ:
@@ -34,9 +31,10 @@ def who(request):
 
 
 series = None
+series_update = None
 def get_series_data():
-    global series
-    if series is not None:
+    global series, series_update
+    if series is not None and series_update >= os.stat(rrd_updated).st_mtime:
         return series
     result = []
     lprefix = len(rrd_dir)+1
@@ -46,6 +44,7 @@ def get_series_data():
                       if name.endswith('.rrd')
                       )
     series = json.dumps(dict(series=sorted(result)))
+    series_update = os.stat(rrd_updated).st_mtime
     return series
 
 
@@ -54,7 +53,7 @@ def get_series_data():
 def home(request):
     return bobo.redirect('metrics/%s/default/' % who(request))
 
-@bobo.resource('/metrics'/)
+@bobo.resource('/metrics/')
 def home2(request):
     return bobo.redirect('%s/default/' % who(request))
 
@@ -83,7 +82,8 @@ class App:
 
     @bobo.query('/web.js', content_type="text/javascript")
     def js(self):
-        return open(os.path.join(os.path.dirname(__file__), 'web.js')).read()
+        return open(os.path.join(os.path.dirname(__file__), 'metrics.js')
+                    ).read()
 
     def get_definitions(self, user=None):
         if user is None:
@@ -91,9 +91,9 @@ class App:
 
         root = self.request.environ['zodb.connection'].root()
         try:
-            definitions = root['definitions']
+            definitions = root['metrics']
         except KeyError:
-            definitions = root['definitions'] = BTrees.OOBTree.BTree()
+            definitions = root['metrics'] = BTrees.OOBTree.BTree()
         try:
             return definitions[user]
         except KeyError:
