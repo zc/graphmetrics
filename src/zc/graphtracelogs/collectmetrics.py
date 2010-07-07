@@ -11,7 +11,7 @@ import zc.ngi.async
 import zc.ngi.generator
 
 logging.basicConfig(level=logging.INFO,
-                    format='$(asctime)s $(name)s $(levelname)s $(message)r',
+                    format='%(asctime)s %(name)s %(levelname)s %(message)r',
                     )
 
 logger = logging.getLogger(__name__)

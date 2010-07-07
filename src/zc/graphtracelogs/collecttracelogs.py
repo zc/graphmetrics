@@ -1,6 +1,13 @@
 import cPickle, datetime, logging, os, pytz, rrdtool, sys, time
+import zc.graphtracelogs
 
-logging.basicConfig(level=logging.INFO)
+# Gaaaa, pickles!
+sys.modules['zc.graphtracelogs.collect'] = sys.modules[__name__]
+zc.graphtracelogs.collect = sys.modules[__name__]
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(name)s %(levelname)s %(message)r',
+                    )
 
 def tliter(f, lineno=0):
     while 1:

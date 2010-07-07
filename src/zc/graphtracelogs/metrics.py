@@ -48,14 +48,9 @@ def get_series_data():
     return series
 
 
-
 @bobo.resource('/metrics')
 def home(request):
-    return bobo.redirect('metrics/%s/default/' % who(request))
-
-@bobo.resource('/metrics/')
-def home2(request):
-    return bobo.redirect('%s/default/' % who(request))
+    return bobo.redirect(request.url+'/%s/default/' % who(request))
 
 
 BIG = 1<<31
