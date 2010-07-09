@@ -131,6 +131,7 @@ class App:
             upper_limit = upper_limit,
             lower_limit = lower_limit,
             generation = generation,
+            title=title,
             ).iteritems() if i[1])
 
         plots = {}
