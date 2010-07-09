@@ -156,6 +156,10 @@ dojo.addOnLoad(function() {
     });
 
     var seriesSelectUI = function (node, callback) {
+        dojo.place(
+            '<span style="font-size: large; font-weight: bold">'+
+            'Start here! -&gt;</span>',
+                   node);
         var select = new MySelect({
             searchAttr: 'id',
             store: series,
@@ -411,25 +415,30 @@ dojo.addOnLoad(function() {
                     }
                 }).domNode);
 
+                var default_colors = [
+                    "#000000", "#0000ff", "#ff0000", "#dda0dd",
+                    "#800080", "#7fff00", "#6495ed", "#ffff00"]
+
+                var newPlotItem = function (v) {
+                    store.fetch({
+                        onComplete: function (items) {
+                            store.newItem({
+                                legend: '',
+                                color: default_colors[
+                                    items.length % default_colors.length],
+                                data: v
+                            })
+                        }
+                    });
+                }
+
                 var select_div = dojo.create(
                     'div', {style: 'float: right'}, node);
-                seriesSelectUI(select_div, function (v) {
-                    store.newItem({
-                        legend: '',
-                        color: '#000000',
-                        data: v
-                    });
-                });
+                seriesSelectUI(select_div, newPlotItem);
                 select_div.appendChild(new dijit.form.Button({
                     label: 'A',
                     onClick: function () {
-                        seriesDialog(function (v) {
-                            store.newItem({
-                                legend: '',
-                                color: '#000000',
-                                data: v
-                            });
-                        })
+                        seriesDialog(newPlotItem);
                     }
                 }).domNode);
                 tooltip(select_div.lastChild, 'aggregate multiple series');
@@ -506,7 +515,6 @@ dojo.addOnLoad(function() {
     }
 
     var Chart = function (params) {
-        console.log(params)
         var div = dojo.create('div',{}, dojo.body());
         params.bust = (new Date()).toString();
         params.width = div.clientWidth;
