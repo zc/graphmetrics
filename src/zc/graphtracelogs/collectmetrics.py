@@ -47,7 +47,7 @@ class Collector:
                 ts = int(time.mktime(
                     l+(0, 0)+(bool(eastern.dst(datetime.datetime(*l))),)))
                 assert elem.startswith('element://')
-                elem = elem[10:]
+                elem = elem[10:].replace(':','..')
                 path = os.path.join(rrd_dir, elem)+'.rrd'
                 assert path.startswith(rrd_dir+'/'), path
                 rrd = rrds.get(path)
