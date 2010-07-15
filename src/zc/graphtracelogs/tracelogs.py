@@ -168,7 +168,8 @@ class App:
 
         return json.dumps(dict(
             customers=sorted((customer, sorted(customers[customer].items()))
-                             for customer in customers)
+                             for customer in customers),
+            saved=list(self.get_definitions(who(self.request))),
             ))
 
     @bobo.query('/show.png', content_type='image/png')
