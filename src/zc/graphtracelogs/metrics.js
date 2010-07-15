@@ -689,6 +689,25 @@ dojo.addOnLoad(function() {
             });
         }
     }).domNode);
+    
+    var savedMenuButton = function(saved) {
+        var menu = new dijit.Menu({ style: "display: none;" });
+        var base = window.location.href.match('(.*/)[^/]+/$')[1];
+        var go = function (where) {
+            window.location.assign(base+where);
+        };
+        for (var i=0; i < saved.length; i++) {
+            menu.addChild(new dijit.MenuItem({
+                label: saved[i],
+                onClick: dojo.partial(go, saved[i])
+            }));
+        }
+        return new dijit.form.ComboButton({
+            label: "Saved",
+            dropDown: menu
+        })
+    };
+
     dojo.xhrGet({
         url: 'get_series.json',
         handleAs: 'json',
@@ -728,6 +747,7 @@ dojo.addOnLoad(function() {
                 label: 'Save',
                 onClick: function () { save_dialog.show(); }
             }).domNode);
+            button_div.appendChild(savedMenuButton(data.saved).domNode);
 
         },
         error: function (error) {alert(error)}
