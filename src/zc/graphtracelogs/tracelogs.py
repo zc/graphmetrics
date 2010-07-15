@@ -31,7 +31,7 @@ def config(config):
 
 port_funcs = dict(
     ghm = (lambda i: (i+8)*1000+80),
-    cnhi = (lambda i: (i+8)*1000+80),
+    cnhi = (lambda i: 14000+i*100+80),
     hd = (lambda i: 11000+i*100+80),
     tbc = (lambda i: 13000+i*100+80),
     )
@@ -118,7 +118,11 @@ class App:
         for inst in sorted(f[:-4] for f in os.listdir(rrd_dir)
                            if inst_rrd(f)):
             host, customer, inst_name = inst.split('__')
-            addr = socket.gethostbyname(host)
+            try:
+                addr = socket.gethostbyname(host)
+            except:
+                logging.exception("Couldn't look up host %s" % host)
+                addr = host
             m = numbered_instance(inst_name)
             if m:
                 port_func = port_funcs.get(customer)
@@ -346,8 +350,6 @@ class App:
                 updated = ' updated'
 
         os.close(fd)
-        logging.info("%r show %r %r %r%s",
-                     who(self.request), self.user, self.name, imgid, updated)
         return open(img_path).read()
 
     @bobo.post('/destroy')
