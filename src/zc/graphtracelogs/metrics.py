@@ -43,7 +43,7 @@ def get_series_data():
                       for name in files
                       if name.endswith('.rrd')
                       )
-    series = json.dumps(dict(series=sorted(result)))
+    series = sorted(result)
     series_update = os.stat(rrd_updated).st_mtime
     return series
 
@@ -112,7 +112,10 @@ class App:
 
     @bobo.query(content_type='application/json')
     def get_series(self):
-        return get_series_data()
+        return json.dumps(dict(
+            series=get_series_data(),
+            saved=list(self.get_definitions(who(self.request))),
+            ))
 
     @bobo.query('/show.png', content_type='image/png')
     def show(self, bobo_request, imgid, generation=0,
