@@ -249,17 +249,21 @@ class App:
                 n += 1
             if not compare:
                 lines.extend([
-                    "CDEF:rpm=rpm0,%s" % (
-                        ','.join("rpm%s,+" % i for i in range(1, n))),
-                    "CDEF:epm=epm0,%s" % (
-                        ','.join("epm%s,+" % i for i in range(1, n))),
-                    "CDEF:bl=bl0,%s" % (
-                        ','.join("bl%s,+" % i for i in range(1, n))),
+                    "CDEF:rpm=rpm0,UN,0,rpm0,IF,%s" % (
+                        ','.join("rpm%s,UN,0,rpm%s,IF,+" % (i, i)
+                                 for i in range(1, n))),
+                    "CDEF:epm=epm0,UN,0,epm0,IF,%s" % (
+                        ','.join("epm%s,UN,0,epm%s,IF,+" % (i, i)
+                                 for i in range(1, n))),
+                    "CDEF:bl=bl0,UN,0,bl0,IF,%s" % (
+                        ','.join("bl%s,UN,0,bl%s,IF,+" % (i, i)
+                                 for i in range(1, n))),
                     ])
                 if log:
                     lines.append(
-                        "CDEF:spr=spr0,%s" % (
-                            ','.join("spr%s,+" % i for i in range(1, n))),
+                        "CDEF:spr=spr0,UN,0,spr0,IF,%s" % (
+                            ','.join("spr%s,UN,0,spr%s,IF,+" % (i, i)
+                                     for i in range(1, n))),
                         )
             lines.append("CDEF:start=%s,%s,AVG" % (
                 ','.join("start%s" % i for i in range(0, n)),
