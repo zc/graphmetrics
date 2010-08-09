@@ -24,7 +24,7 @@ extra_desc = re.compile(r"\{([a-z]+)\}").search
 
 class Sized(zc.ngi.adapters.Sized):
 
-    def setHandler(self, handler):
+    def set_handler(self, handler):
         self.handler = handler
         self.input = []
         self.want = 9
