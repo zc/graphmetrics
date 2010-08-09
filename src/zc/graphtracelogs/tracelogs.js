@@ -102,6 +102,7 @@ dojo.require("dojo.date.stamp");
             value: params[name],
             maxLength: length,
             regExp: regex,
+            style: 'width: ' + (length+3) + 'ch',
             onChange: function(val) {
                 params[name] = val;
                 update();
@@ -109,7 +110,6 @@ dojo.require("dojo.date.stamp");
         });
         dojo.place('<span> '+label+': </span>', div)
         div.appendChild(widget.domNode);
-        dojo.style(widget.domNode, "width", (length+3)+"ch");
 
         this.update = function (settings) {
             widget.attr('value', settings[name] || null);
@@ -234,7 +234,7 @@ dojo.require("dojo.date.stamp");
                 changed({height: val});
             }
         }).domNode);
-        dojo.style(div.lastChild, "width", "4ch");
+        dojo.style(div.lastChild, "width", "7ch");
 
         div.appendChild(new dijit.form.Button({
             label: 'X',
