@@ -33,6 +33,7 @@ class Collector:
         connection.write('subscribe metrics\n')
         rrd_dir = self.rrd_dir
         rrds = self.rrds
+        badhosts = set()
 
         while 1:
             try:
@@ -48,6 +49,12 @@ class Collector:
                     l+(0, 0)+(bool(eastern.dst(datetime.datetime(*l))),)))
                 assert elem.startswith('element://')
                 elem = elem[10:].replace(':','..')
+                host = elem.split('/', 1)[0]
+                if '.' not in host:
+                    if host not in badhosts:
+                        badhosts.add(host)
+                        logger.error('Bad host in %r', line)
+                    continue
                 path = os.path.join(rrd_dir, elem)+'.rrd'
                 assert path.startswith(rrd_dir+'/'), path
                 rrd = rrds.get(path)
@@ -71,7 +78,8 @@ class Collector:
                         f.close()
                     rrd.rrd_last = rrd.last()
                 if ts < rrd.rrd_last:
-                    logger.error('ts out of order %s %s', line, rrd.rrd_last)
+                    logger.error('ts out of order %s %s %s %s',
+                                 line, path, ts, rrd.rrd_last)
                     continue
                 if ts == rrd.rrd_last:
                     ts += 1
