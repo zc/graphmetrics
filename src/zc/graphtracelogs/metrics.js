@@ -307,6 +307,7 @@ dojo.addOnLoad(function() {
             dialog = new dijit.Dialog({
                 title: 'Plots for this chart',
                 style: 'width: 640px; height: 300px',
+                autofocus: false,
                 content: border
             });
             store = new dojo.data.ItemFileWriteStore({
@@ -616,7 +617,7 @@ dojo.addOnLoad(function() {
                 changed({height: val});
             }
         }).domNode);
-        dojo.style(div.lastChild, "width", "4ch");
+        dojo.style(div.lastChild, "width", "7ch");
 
         div.appendChild(new dijit.form.Button({
             label: '-',
