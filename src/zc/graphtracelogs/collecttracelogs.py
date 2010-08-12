@@ -17,6 +17,9 @@ def tliter(f, lineno=0):
         lineno += 1
         try:
             record = line.strip().split()
+            if record[3] == ':':
+                # Gaaa syslog-ng 3
+                record.pop(3)
             instance = '__'.join(record[:3])
             if 'T' in record[5]:
                 continue
