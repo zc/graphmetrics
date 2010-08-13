@@ -1,6 +1,6 @@
 Name: graphtracelogs
 Version: 0
-Release: 3
+Release: 0
 
 Summary: Trace-log graphing
 Group: Applications/Database
