@@ -37,7 +37,8 @@ setup(
     packages = find_packages('src'),
     namespace_packages = name.split('.')[:1],
     package_dir = {'': 'src'},
-    install_requires = ['setuptools', 'py-rrdtool', 'pytz'],
+    install_requires = ['setuptools', 'py-rrdtool', 'pytz', 'zc.ngi'],
+    extras_require=dict(test=['manuel', 'zope.testing']),
     zip_safe = False,
     entry_points=entry_points,
     )

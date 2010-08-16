@@ -90,6 +90,7 @@ class Collector:
                 self.connector(self.addr, self)
             except:                     # Unexpected error
                 logger.exception('failure in input handler')
+                connection.close()
                 self.connector(self.addr, self)
 
     def failed_connect(self, reason):

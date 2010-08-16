@@ -1,0 +1,90 @@
+Metrics collection
+==================
+
+Metrics collection is implemented with a class that provides a client
+connection handler.
+
+    >>> setupLogging()
+
+    >>> import os, zc.ngi.testing, zc.graphtracelogs.collectmetrics
+    >>> os.listdir('.')
+    []
+
+    >>> handlers = []
+    >>> def connect(addr, handler):
+    ...     print 'connect requested', addr
+    ...     handlers.append(handler)
+
+    >>> collector = zc.graphtracelogs.collectmetrics.Collector(
+    ...     connect, 'test', '.')
+    connect requested test
+
+    >>> handlers.pop() is collector
+    True
+
+When the collector is connected, it submits a metrics subscription:
+
+    >>> conn = zc.ngi.testing.Connection()
+    >>> _ = collector.connected(conn)
+    -> 'subscribe metrics\n'
+
+At this point, it just waits for data:
+
+    >>> conn.peer.write('METRIC:\t2010-08-13 15:01:53\t'
+    ...   'element://app3.zope.net/foo/bar\tcount\t0.000000\n')
+
+As the data comes in, it arranges data into directories and files:
+
+    >>> for p, dirs, files in os.walk('.'):
+    ...     print p, sorted(files)
+    . ['.updated']
+    ./app3.zope.net []
+    ./app3.zope.net/foo ['bar.rrd']
+
+    >>> conn.peer.write('METRIC:\t2010-08-13 15:01:53\t'
+    ...   'element://app3.zope.net/foo/baz\tcount\t0.000000\n')
+
+    >>> for p, dirs, files in os.walk('.'):
+    ...     print p, sorted(files)
+    . ['.updated']
+    ./app3.zope.net []
+    ./app3.zope.net/foo ['bar.rrd', 'baz.rrd']
+
+    >>> conn.peer.write('METRIC:\t2010-08-13 15:06:50\t'
+    ...   'element://app3.zope.net/foo/bar\tcount\t1.000000\n')
+
+    >>> conn.peer.write('METRIC:\t2010-08-13 15:06:50\t'
+    ...   'element://app3.zope.net/foo/baz\tcount\t1.000000\n')
+
+    >>> conn.peer.write('METRIC:\t2010-08-13 15:11:51\t'
+    ...   'element://app3.zope.net/foo/bar\tcount\t2.000000\n')
+
+    >>> conn.peer.write('METRIC:\t2010-08-13 15:11:51\t'
+    ...   'element://app3.zope.net/foo/baz\tcount\t2.000000\n')
+
+    >>> conn.peer.write('METRIC:\t2010-08-13 15:16:52\t'
+    ...   'element://app3.zope.net/foo/bar\tcount\t3.000000\n')
+
+    >>> conn.peer.write('METRIC:\t2010-08-13 15:16:52\t'
+    ...   'element://app3.zope.net/foo/baz\tcount\t3.000000\n')
+
+Data are placed into rrd files:
+
+    >>> import rrdtool
+    >>> rrdtool.fetch('app3.zope.net/foo/bar.rrd', 'AVERAGE',
+    ...               '-s', '1281711600', '-e', '1281712200',)[2][:3]
+    [(0.62333333333333329,), (1.6333333333333333,), (2.6299999999999999,)]
+
+If we give it poorly formed data, it will log an error and reconnect:
+
+    >>> conn.peer.write('METRIC:\t2010-08-13 15:01:53\txxx\n')
+    ... # doctest: +ELLIPSIS
+    zc.graphtracelogs.collectmetrics ERROR failure in input handler
+    Traceback (most recent call last):
+    ...
+    ValueError: need more than 3 values to unpack
+    -> CLOSE
+    connect requested test
+
+    >>> handlers.pop() is collector
+    True
