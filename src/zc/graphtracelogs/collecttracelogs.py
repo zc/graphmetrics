@@ -1,4 +1,4 @@
-import cPickle, datetime, logging, os, pytz, rrdtool, sys, time
+import cPickle, datetime, gzip, logging, os, pytz, rrdtool, socket, sys, time
 import zc.graphtracelogs
 
 # Gaaaa, pickles!
@@ -8,6 +8,16 @@ zc.graphtracelogs.collect = sys.modules[__name__]
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(name)s %(levelname)s %(message)r',
                     )
+
+hostcache = {}
+def gethost(name):
+    r = hostcache.get(name)
+    now = time.time()
+    if r and (now-r[1] < 999):
+        return r[0]
+    host = socket.gethostbyname(name)
+    hostcache[name] = host, now
+    return host
 
 def tliter(f, lineno=0):
     while 1:
@@ -20,6 +30,8 @@ def tliter(f, lineno=0):
             if record[3] == ':':
                 # Gaaa syslog-ng 3
                 record.pop(3)
+
+            record[0] = gethost(record[0])
             instance = '__'.join(record[:3])
             if 'T' in record[5]:
                 continue
@@ -196,19 +208,27 @@ def main(args=None):
     log_dir_name = os.path.basename(log_dir)+'-'
     log_dir = os.path.abspath(log_dir)
     os.chdir(rrd_dir)
-    logs = sorted(f for f in os.listdir(log_dir) if f.endswith('-z4m.log'))
+    logs = sorted(f for f in os.listdir(log_dir)
+                  if f.endswith('-z4m.log') or f.endswith('-z4m.log.gz'))
     state = {}
+
     while len(logs) > 1:
         log_name = logs.pop(0)
         log_path = os.path.join(log_dir, log_name)
-        if os.path.exists(log_dir_name+log_name+'.endstate'):
-            state = cPickle.loads(
-                open(log_dir_name+log_name+'.endstate').read())
+        endstate_name = log_dir_name+log_name
+        if endstate_name.endswith('.gz'):
+            endstate_name = endstate_name[:-3]
+        endstate_name += '.endstate'
+        if os.path.exists(endstate_name):
+            state = cPickle.loads(open(endstate_name).read())
         else:
             logging.info('processing %s', log_path)
-            process_file(open(log_path), state)
-            open(log_dir_name+log_name+'.endstate', 'w').write(
-                cPickle.dumps(state))
+            if log_path.endswith('.gz'):
+                f = gzip.GzipFile(log_path)
+            else:
+                f = open(log_path)
+            process_file(f, state)
+            open(endstate_name, 'w').write(cPickle.dumps(state))
 
     log_name, = logs
     while 1:

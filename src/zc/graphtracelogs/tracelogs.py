@@ -21,8 +21,15 @@ inst_rrd = re.compile(r'\S+__\S+__\S+.rrd$').match
 numbered_instance = re.compile('instance(\d+)$').match
 
 def config(config):
-    global rrd_dir
+    global rrd_dir, get_pools
     rrd_dir = config['rrd']
+    if 'pool_info' in config:
+        pool_addr = config['pool_info'].split(':')
+        pool_addr = pool_addr[0], int(pool_addr[1])
+        get_pools = lambda : pool.get_pools(pool_addr)
+    else:
+        get_pools = pool.get_pools
+
     if 'logging' in config:
         if not getattr(logging, 'been_configured', False):
             import ZConfig
@@ -56,6 +63,23 @@ def home(request):
     return bobo.redirect('%s/default/' % who(request))
 
 BIG = 1<<31
+
+hostcache = {}
+def gethost(name):
+    r = hostcache.get(name)
+    now = time.time()
+    if r and (now-r[1] < 999):
+        return r[0]
+    host = socket.gethostbyname(name)
+    hostcache[name] = host, now
+    return host
+
+def rrdname(instance):
+    instance += '.rrd'
+    assert inst_rrd(instance)
+    instance = instance.split('__')
+    instance[0] = gethost(instance[0])
+    return '__'.join(instance)
 
 @bobo.subroute('/:user/:name', scan=True)
 class App:
@@ -117,12 +141,14 @@ class App:
         pools = {}
         for inst in sorted(f[:-4] for f in os.listdir(rrd_dir)
                            if inst_rrd(f)):
-            host, customer, inst_name = inst.split('__')
+            addr, customer, inst_name = inst.split('__')
             try:
-                addr = socket.gethostbyname(host)
+                host = socket.gethostbyaddr(addr)[0]
             except:
-                logging.exception("Couldn't look up host %s" % host)
-                addr = host
+                logging.exception("Couldn't look up addr %s" % addr)
+                host = addr
+            inst = '%s__%s__%s' % (host, customer, inst_name)
+
             m = numbered_instance(inst_name)
             if m:
                 port_func = port_funcs.get(customer)
@@ -141,7 +167,7 @@ class App:
                 instances = hosts[host] = []
             instances.append((inst_name, inst))
 
-        for info, addrs in pool.get_pools():
+        for info, addrs in get_pools():
             customer = info['customer'].lower()
             label = "%(pooltype)s-%(desc)s" % info
             instances = sorted([by_addr[addr] for addr in addrs
@@ -214,17 +240,17 @@ class App:
             ninstances = len(instances)
             n=0
             for instance in instances:
-                instance += '.rrd'
-                assert inst_rrd(instance)
-                rrd_path = os.path.join(rrd_dir, instance)
+                rrd_path = os.path.join(rrd_dir, rrdname(instance))
                 assert os.path.exists(rrd_path)
                 if compare:
+                    legend = "%s-%s" % (instance.split('.')[0],
+                                        instance.split('__')[-1])
                     lines.extend([
                         rrdtool.Def("v%s" % n, rrd_path, data_source=compare,
                                     cf=rrdtool.AverageCF),
                         "LINE1:v%s#%s:%s" % (
                             n, colors[(n*ncolors/ninstances) % len(colors)],
-                            instance[:-4]),
+                            legend),
                         ])
                 else:
                     lines.extend([
@@ -270,9 +296,7 @@ class App:
                 n))
         else:
             title = instance.replace('__', ' ')
-            instance += '.rrd'
-            assert inst_rrd(instance)
-            rrd_path = os.path.join(rrd_dir, instance)
+            rrd_path = os.path.join(rrd_dir, rrdname(instance))
             assert os.path.exists(rrd_path)
             lines.extend([
                 rrdtool.Def("rpm", rrd_path, data_source="rpm",
@@ -290,7 +314,6 @@ class App:
                                 cf=rrdtool.AverageCF),
                     )
 
-        rrd_path = os.path.join(rrd_dir, instance)
         fd, img_path = tempfile.mkstemp('.png')
         g = rrdtool.RoundRobinGraph(img_path)
 
