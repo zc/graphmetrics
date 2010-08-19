@@ -38,12 +38,15 @@ port_funcs = dict(
 
 hex2 = lambda v: ('0'+hex(v)[2:])[-2:]
 
-colors = []
-for i in 0, 127, 255:
-    for j in 0, 127, 255:
-        for k in 0, 127, 255:
-            colors.append(hex2(i)+hex2(j)+hex2(k))
-ncolors = len(colors)-1
+styles = []
+for thickness in 1, 2:
+    for dash in False, True:
+        for color in ("000000", "0000ff", "ff0000", "dda0dd",
+                      "800080", "7fff00", "6495ed", "ffff00"):
+            styles.append((thickness, dash, color))
+
+nstyles = len(styles)
+
 
 def who(request):
     if 'HTTP_AUTHORIZATION' in request.environ:
@@ -154,12 +157,16 @@ class App:
                 compare_max_rpm = (
                     (',spr,%s-%s-max-rpm,' % (customer, label))
                     + (','.join(instances)))
+                max_headroom = (
+                    (',mh,%s-%s-max-headroom,' % (customer, label))
+                    + (','.join(instances)))
                 instances = [(inst, inst)
                              for inst in sorted(instances)]
                 instances[0:0] = [
                     ('all', all),
                     ('compare rpm', compare_rpm),
                     ('compare max rpm', compare_max_rpm),
+                    ('max headroon', max_headroom),
                     ]
                 cpools = customers.get(customer)
                 if cpools is None:
@@ -204,12 +211,16 @@ class App:
         log = log == 'y'
 
         lines = []
-        compare = False
+        compare = mh = pool = False
         if ',' in instance:
+            pool = True
             instances = instance.split(',')
             if not instances[0]:
                 instances.pop(0)
                 compare = instances.pop(0)
+                if compare == 'mh':
+                    compare = ''
+                    mh=True
             title = instances.pop(0).replace('-', ' ')
             ninstances = len(instances)
             n=0
@@ -219,23 +230,31 @@ class App:
                 rrd_path = os.path.join(rrd_dir, instance)
                 assert os.path.exists(rrd_path)
                 if compare:
+                    thickness, dash, color = styles[n % nstyles]
+                    legend = instance[:-4]
+                    legend = "%s-%s" % (legend.split('.')[0],
+                                        legend.split('__')[-1])
+                    if dash:
+                        legend = '-' + legend
                     lines.extend([
                         rrdtool.Def("v%s" % n, rrd_path, data_source=compare,
                                     cf=rrdtool.AverageCF),
-                        "LINE1:v%s#%s:%s" % (
-                            n, colors[(n*ncolors/ninstances) % len(colors)],
-                            instance[:-4]),
+                        "LINE%s:v%s#%s:%s%s" % (
+                            thickness, n, color, legend,
+                            ':dashes' if dash else ''),
                         ])
                 else:
                     lines.extend([
                         rrdtool.Def("rpm%s" % n, rrd_path, data_source="rpm",
                                     cf=rrdtool.AverageCF),
-                        rrdtool.Def("epm%s" % n, rrd_path, data_source="epm",
+                        rrdtool.Def("epm%s" % n,
+                                    rrd_path, data_source="epm",
                                     cf=rrdtool.AverageCF),
-                        rrdtool.Def("bl%s" % n, rrd_path, data_source="bl",
+                        rrdtool.Def("bl%s" % n,
+                                    rrd_path, data_source="bl",
                                     cf=rrdtool.AverageCF),
                         ])
-                    if log:
+                    if 1 or log or mh:
                         lines.append(
                             rrdtool.Def("spr%s" % n, rrd_path,
                                         data_source="spr",
@@ -259,11 +278,15 @@ class App:
                         ','.join("bl%s,UN,0,bl%s,IF,+" % (i, i)
                                  for i in range(1, n))),
                     ])
-                if log:
+                if log or mh:
                     lines.append(
                         "CDEF:spr=spr0,UN,0,spr0,IF,%s" % (
                             ','.join("spr%s,UN,0,spr%s,IF,+" % (i, i)
                                      for i in range(1, n))),
+                        )
+                if mh:
+                    lines.append(
+                        'CDEF:mh=spr,rpm,-,spr,/,100,*'
                         )
             lines.append("CDEF:start=%s,%s,AVG" % (
                 ','.join("start%s" % i for i in range(0, n)),
@@ -318,21 +341,27 @@ class App:
             options['step'] = int(step)*60
 
         if not compare:
-            lines.extend([
-                rrdtool.LINE1("rpm", rrggbb="00ff00", legend="rpm"),
-                rrdtool.LINE1("epm", rrggbb="ff0000", legend="epm"),
-                rrdtool.LINE1("bl", rrggbb="e082e6", legend="waiting"),
-                ])
+            if mh:
+                lines.extend([
+                    rrdtool.LINE1("mh", rrggbb="00ff00", legend="max-headroom"),
+                    rrdtool.LINE1("epm", rrggbb="ff0000", legend="epm"),
+                    rrdtool.LINE1("bl", rrggbb="e082e6", legend="waiting"),
+                    ])
+            else:
+                lines.extend([
+                    rrdtool.LINE1("rpm", rrggbb="00ff00", legend="rpm"),
+                    rrdtool.LINE1("epm", rrggbb="ff0000", legend="epm"),
+                    rrdtool.LINE1("bl", rrggbb="e082e6", legend="waiting"),
+                    ])
 
-            if log:
-                options['logarithmic'] = None
-                lines.append(
-                    rrdtool.LINE1("spr", rrggbb="93f9fb", legend="max rpm"),
-                    )
-        else:
-            if log:
-                options['logarithmic'] = None
+                if log:
+                    lines.append(
+                        rrdtool.LINE1("spr", rrggbb="93f9fb", legend="max rpm"),
+                        )
+        if log:
+            options['logarithmic'] = None
         lines.append('TICK:start#00000055:1:start')
+        #lines.append('-Y')
 
         g.graph(*lines, **options)
 
