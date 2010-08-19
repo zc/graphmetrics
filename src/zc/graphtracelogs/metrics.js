@@ -14,6 +14,7 @@ dojo.require("dojo.data.ItemFileReadStore");
 dojo.require("dojo.data.ItemFileWriteStore");
 dojo.require("dojo.date.stamp");
 dojo.require("dojox.grid.DataGrid");
+dojo.require("dojox.grid.cells._base");
 
 dojo.addOnLoad(function() {
     var imgid = 0;
@@ -306,7 +307,7 @@ dojo.addOnLoad(function() {
             });
             dialog = new dijit.Dialog({
                 title: 'Plots for this chart',
-                style: 'width: 640px; height: 300px',
+                style: 'width: 800px; height: 400px',
                 autofocus: false,
                 content: border
             });
@@ -369,6 +370,18 @@ dojo.addOnLoad(function() {
                         }
                     },
                     {
+                        field: 'dash',
+                        name: 'Dash',
+                        width: '3ch',
+                        type: dojox.grid.cells.Bool, editable: true
+                    },
+                    {
+                        field: 'thick',
+                        name: 'Thick',
+                        width: '3ch',
+                        type: dojox.grid.cells.Bool, editable: true
+                    },
+                    {
                         field: 'data',
                         width: 'auto',
                         name: 'Series',
@@ -407,7 +420,9 @@ dojo.addOnLoad(function() {
                                                                    'legend'),
                                             color: store.getValue(item,
                                                                   'color'),
-                                            data: store.getValue(item, 'data')
+                                            data: store.getValue(item, 'data'),
+                                            dash: store.getValue(item, 'dash'),
+                                            thick: store.getValue(item, 'thick')
                                         };
                                     }));
                                 dialog.hide();
@@ -427,6 +442,12 @@ dojo.addOnLoad(function() {
                                 legend: '',
                                 color: default_colors[
                                     items.length % default_colors.length],
+                                dash: Math.floor(items.length /
+                                                 default_colors.length
+                                                ) % 2,
+                                thick: Math.floor(items.length /
+                                                  (default_colors.length*2)
+                                                 ) % 2,
                                 data: v
                             })
                         }
@@ -484,6 +505,8 @@ dojo.addOnLoad(function() {
                 delete params['legend'+i];
                 delete params['color'+i];
                 delete params['data'+i];
+                delete params['dash'+i];
+                delete params['thick'+i];
             }
         } else
             params = {}
@@ -493,6 +516,8 @@ dojo.addOnLoad(function() {
             params['legend'+i] = data[i].legend;
             params['color'+i] = data[i].color.slice(1);
             params['data'+i] = data[i].data;
+            params['dash'+i] = data[i].dash ? 't' : '';
+            params['thick'+i] = data[i].thick ? 't' : '';
         }
         return params;
     }
@@ -509,7 +534,9 @@ dojo.addOnLoad(function() {
             data.push({
                 legend: params['legend'+i],
                 color:  '#'+params['color'+i],
-                data: params['data'+i]
+                data: params['data'+i],
+                dash: params['dash'+i] == 't',
+                thick: params['thick'+i] == 't'
             });
         }
         return data;

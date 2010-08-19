@@ -15,13 +15,21 @@ import time
 
 dojoroot = 'http://ajax.googleapis.com/ajax/libs/dojo/1.4.3'
 
-inst_rrd = re.compile(r'\S+__\S+__\S+.rrd$').match
-numbered_instance = re.compile('instance(\d+)$').match
+inst_tracelog_rrd = re.compile(r'\S+__\S+__\S+.rrd$').match
+
+tracelog_vars = 'bl|epm|rpm|start|spr'
+
+inst_tracelog_series = re.compile(
+    r'([^/]+)/([^/]+)-z4m/([^/]+)/tracelog/(%s)' % tracelog_vars
+    ).match
+
+tracelog_vars = tracelog_vars.split('|')
 
 def config(config):
-    global rrd_dir, rrd_updated
+    global rrd_dir, rrd_updated, tracelog_rrd_dir
     rrd_dir = config['metrics-rrd']
     rrd_updated = os.path.join(rrd_dir, '.updated')
+    tracelog_rrd_dir = config['rrd']
 
 def who(request):
     if 'HTTP_AUTHORIZATION' in request.environ:
@@ -29,6 +37,17 @@ def who(request):
                                ].split()[1].decode('base64').split(':')[0]
     return 'anon'
 
+def rrd_id(series):
+    m = inst_tracelog_series(series)
+    if m:
+        ds = m.group(4)
+        rrd_path = os.path.join(
+            tracelog_rrd_dir,
+            "%s__%s__%s.rrd" % m.group(1, 2, 3))
+    else:
+        ds='data'
+        rrd_path = os.path.join(rrd_dir, series+'.rrd')
+    return rrd_path, ds
 
 series = None
 series_update = None
@@ -37,12 +56,24 @@ def get_series_data():
     if series is not None and series_update >= os.stat(rrd_updated).st_mtime:
         return series
     result = []
+
+    # metrics
     lprefix = len(rrd_dir)+1
     for path, dirs, files in os.walk(rrd_dir):
         result.extend(os.path.join(path, name)[lprefix:-4]
                       for name in files
                       if name.endswith('.rrd')
                       )
+
+    # trace logs
+    for inst in sorted(f[:-4] for f in os.listdir(tracelog_rrd_dir)
+                       if inst_tracelog_rrd(f)):
+        host, customer, inst_name = inst.split('__')
+        result.extend([
+            "%s/%s-z4m/%s/tracelog/%s" % (host, customer, inst_name, v)
+            for v in tracelog_vars
+            ])
+
     series = sorted(result)
     series_update = os.stat(rrd_updated).st_mtime
     return series
@@ -59,7 +90,7 @@ def home_(request):
 
 BIG = 1<<31
 
-plotparam = re.compile('(legend|color|data)(\d+)$').match
+plotparam = re.compile('(legend|color|data|thick|dash)(\d+)$').match
 
 @bobo.subroute('/metrics/:user/:name', scan=True)
 class App:
@@ -172,24 +203,31 @@ class App:
             if ',' in series:
                 cdef = ''
                 for i, s in enumerate(series.split(',')):
-                    rrd_path = os.path.join(rrd_dir, s+'.rrd')
+                    rrd_path, data_source = rrd_id(s)
                     dname = "v%s_%s" % (n, i)
                     cdef += dname + ','
                     lines.append(
-                        rrdtool.Def(dname, rrd_path,
-                                    data_source='data', cf=rrdtool.AverageCF)
+                        rrdtool.Def(dname, rrd_path, data_source=data_source,
+                                    cf=rrdtool.AverageCF)
                         )
                 lines.append( "CDEF:v%s=%s%s,AVG" % (n, cdef, i+1))
             else:
-                rrd_path = os.path.join(rrd_dir, series+'.rrd')
+                rrd_path, data_source = rrd_id(series)
                 lines.append(
-                    rrdtool.Def("v%s" % n, rrd_path, data_source='data',
+                    rrdtool.Def("v%s" % n, rrd_path, data_source=data_source,
                                 cf=rrdtool.AverageCF),
                     )
             legend = plot['legend'] or plot['data']
+            dash = plot.get('dash')
+            if dash:
+                legend = '- '+legend
             if len(legend) > 50:
                 legend = legend[:47]+'...'
-            lines.append("LINE1:v%s#%s:%s" % (n, plot['color'], legend))
+            lines.append("LINE%s:v%s#%s:%s%s" % (
+                2 if plot.get('thick') else 1,
+                n, plot['color'], legend,
+                ":dashes" if dash else "",
+                ))
 
         fd, img_path = tempfile.mkstemp('.png')
         g = rrdtool.RoundRobinGraph(img_path)
