@@ -197,7 +197,6 @@ dojo.require("dojo.date.stamp");
         // Apply same scaling
         div.appendChild(new dijit.form.Button({
             label: 'A',
-            id: 'all_button_'+imgid,
             onClick: function () {
                 var settings = {};
                 dojo.forEach([
@@ -214,7 +213,7 @@ dojo.require("dojo.date.stamp");
             }
         }).domNode);
         new dijit.Tooltip({
-            connectId: ['all_button_'+imgid],
+            connectId: [div.lastChild],
             label: 'Apply this scaling to all charts',
 
         });
