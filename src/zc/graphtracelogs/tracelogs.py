@@ -1,5 +1,6 @@
 import BTrees.OOBTree
 import bobo
+import boboserver
 import datetime
 import json
 import logging
@@ -59,6 +60,9 @@ def home(request):
     return bobo.redirect('%s/default/' % who(request))
 
 BIG = 1<<31
+
+static = boboserver.static(
+    '/static', os.path.join(os.path.dirname(__file__), 'static'))
 
 @bobo.subroute('/:user/:name', scan=True)
 class App:
@@ -402,6 +406,10 @@ class App:
                 return 'destroyed %r' % defs['charts']._p_oid
         return ''
 
+    def _copydefs(self, defs):
+        return persistent.mapping.PersistentMapping(
+                    charts=BTrees.OOBTree.BTree(charts.items()))
+
     @bobo.post(content_type='application/json')
     def save(self, name, overwrite=False):
         me = who(self.request)
@@ -439,9 +447,12 @@ index_html = """
 @import "%(dojoroot)s/dijit/themes/tundra/tundra.css";
 @import "%(dojoroot)s/dojox/grid/resources/Grid.css";
 </style>
+<script type="text/javascript">
+  djConfig={ baseUrl: "../../", modulePaths: { zc: "static" }};
+</script>
 <script type="text/javascript"
         src="%(dojoroot)s/dojo/dojo.xd.js.uncompressed.js"
-        djConfig="isDebug: true"></script>
+        ></script>
 <script type="text/javascript" src="web.js"></script>
 </head><body class="tundra"></body></html>
 """ % globals()

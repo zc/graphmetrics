@@ -1,20 +1,16 @@
 dojo.require("dijit.ColorPalette");
 dojo.require("dijit.Dialog");
 dojo.require("dijit.form.Button");
-dojo.require("dijit.form.CheckBox");
-dojo.require("dijit.form.DateTextBox");
 dojo.require("dijit.form.FilteringSelect");
 dojo.require("dijit.form.TextBox");
-dojo.require("dijit.form.TimeTextBox");
 dojo.require("dijit.layout.BorderContainer");
 dojo.require("dijit.layout.ContentPane");
 dojo.require("dijit.Menu");
-dojo.require("dijit.Tooltip");
 dojo.require("dojo.data.ItemFileReadStore");
 dojo.require("dojo.data.ItemFileWriteStore");
-dojo.require("dojo.date.stamp");
 dojo.require("dojox.grid.DataGrid");
 dojo.require("dojox.grid.cells._base");
+dojo.require('zc.util');
 
 dojo.addOnLoad(function() {
     var imgid = 0;
@@ -34,119 +30,6 @@ dojo.addOnLoad(function() {
         setTimeout(keep_refreshing, 60000);
     };
     setTimeout(keep_refreshing, 60000);
-
-    var twodigits = function (i) {
-        var result = i.toString();
-        if (result.length < 2)
-            result = '0' + i;
-        return result;
-    };
-    var date2string = function (d) {
-        if (d)
-            return (d.getFullYear()
-                    + '-' + twodigits(d.getMonth()+1)
-                    + '-' + twodigits(d.getDate())
-                   );
-        return undefined;
-    };
-    var string2date = function (s) {
-        if (s)
-            return dojo.date.stamp.fromISOString(s);
-        return undefined;
-    };
-    var time2string = function (d) {
-        if (d)
-            return ('T'
-                    + d.getHours()
-                    + ':' + twodigits(d.getMinutes())
-                    + ':' + twodigits(d.getSeconds())
-                   );
-        return undefined;
-    };
-    var string2time = function (s) {
-        if (s) {
-            var result = new Date();
-            s = s.split('T')[1].split(':');
-            result.setHours(s[0]);
-            result.setMinutes(s[1]);
-            result.setSeconds(s[2]);
-            return result;
-        }
-        return undefined;
-    };
-
-    var DateTimeUI = function (div, params, name, update) {
-        var date_widget = new dijit.form.DateTextBox({
-            value: string2date(params[name]),
-            onChange: function(date) {
-                params[name] = date2string(date);
-                update();
-            }
-        });
-        div.appendChild(date_widget.domNode);
-        dojo.style(div.lastChild, "width", "12ch");
-        dojo.place('<span>T</span>', div)
-        var time_widget = new dijit.form.TimeTextBox({
-            value: string2time(params[name+'_time']),
-            onChange: function(time) {
-                params[name+'_time'] = time2string(time);
-                update();
-            }
-        });
-        div.appendChild(time_widget.domNode);
-        dojo.style(div.lastChild, "width", "10ch");
-
-        this.update = function (settings) {
-            date_widget.attr('value', string2date(settings[name]) || null);
-            time_widget.attr('value',
-                             string2time(settings[name+'_time']) || null);
-        };
-    };
-
-    var tooltip = function (node, text) {
-        new dijit.Tooltip({connectId: [node], label: text});
-    };
-
-    var TextUI = function (
-        div, label, params, name, update, length, regex, tip) {
-        var widget = new dijit.form.ValidationTextBox({
-            value: params[name],
-            maxLength: length,
-            regExp: regex,
-            style: 'width: ' + (length+3) + 'ch',
-            onChange: function(val) {
-                params[name] = val;
-                update();
-            }
-        });
-        dojo.place('<span> '+label+': </span>', div);
-        div.appendChild(widget.domNode);
-        if (tip)
-            tooltip(widget.domNode, tip);
-        this.update = function (settings) {
-            widget.attr('value', settings[name] || null);
-        };
-    };
-
-    var BoolUI = function (div, label, params, name, update) {
-        var widget = new dijit.form.CheckBox({
-            checked: params[name] == 'y' ? 'checked': undefined,
-            onChange: function(val) {
-                if (val)
-                    params[name] = 'y';
-                else
-                    params[name] = undefined;
-                update();
-            }
-        });
-        dojo.place('<span> '+label+': </span>', div)
-        div.appendChild(widget.domNode);
-
-        this.update = function (settings) {
-            widget.attr('checked',
-                        settings[name] == 'y' ? 'checked': undefined);
-        };
-    };
 
     var MySelect = dojo.declare(dijit.form.FilteringSelect, {
         _startSearchFromInput: function(){
@@ -174,7 +57,7 @@ dojo.addOnLoad(function() {
             }
         });
         node.appendChild(select.domNode);
-        tooltip(select.domNode, 'search string using * for wildcards');
+        zc.util.tooltip(select.domNode, 'search string using * for wildcards');
         node.appendChild(new dijit.form.Button({
             label: 'last search',
             onClick: function () {
@@ -320,8 +203,9 @@ dojo.addOnLoad(function() {
                 style: 'width: 100%; height: 4ex',
                 region:  'top'
             }, function (node) {
-                title_ui = new TextUI(node, 'Chart title', params, 'title',
-                                      function () {}, 50, '.*');
+                title_ui = new zc.util.TextUI(
+                    node, 'Chart title', params, 'title',
+                    function () {}, 50, '.*');
             }));
 
             var grid = new dojox.grid.DataGrid({
@@ -463,7 +347,8 @@ dojo.addOnLoad(function() {
                         seriesDialog(newPlotItem);
                     }
                 }).domNode);
-                tooltip(select_div.lastChild, 'aggregate multiple series');
+                zc.util.tooltip(select_div.lastChild,
+                                'aggregate multiple series');
                 select_div.appendChild(new dijit.form.Button({
                     label: '-',
                     onClick: function () {
@@ -586,20 +471,20 @@ dojo.addOnLoad(function() {
             changed(settings);
         };
 
-        uis.push(new DateTimeUI(div, params, 'start', changed));
+        uis.push(new zc.util.DateTimeUI(div, params, 'start', changed));
         dojo.place('<span> to </span>', div)
-        uis.push(new DateTimeUI(div, params, 'end', changed));
+        uis.push(new zc.util.DateTimeUI(div, params, 'end', changed));
 
-        uis.push(new TextUI(div, 'Trail', params, 'trail', changed,
+        uis.push(new zc.util.TextUI(div, 'Trail', params, 'trail', changed,
                             3, "^[0-9]+$",
                             'Trailing hours to show (ignoring time range)'));
-        uis.push(new TextUI(div, 'Step', params, 'step', changed,
+        uis.push(new zc.util.TextUI(div, 'Step', params, 'step', changed,
                             4, "[0-9]+"));
-        uis.push(new TextUI(div, 'Min', params, 'lower_limit', changed,
+        uis.push(new zc.util.TextUI(div, 'Min', params, 'lower_limit', changed,
                             6, "[0-9]+"));
-        uis.push(new TextUI(div, 'Max', params, 'upper_limit', changed,
+        uis.push(new zc.util.TextUI(div, 'Max', params, 'upper_limit', changed,
                             9, "[0-9]+"));
-        uis.push(new BoolUI(div, 'Log', params, 'log', changed));
+        uis.push(new zc.util.BoolUI(div, 'Log', params, 'log', changed));
 
         // Apply same scaling
         div.appendChild(new dijit.form.Button({
@@ -619,7 +504,7 @@ dojo.addOnLoad(function() {
                 }
             }
         }).domNode);
-        tooltip(div.lastChild, 'Apply this scaling to all charts');
+        zc.util.tooltip(div.lastChild, 'Apply this scaling to all charts');
 
         // Select data to show
         div.appendChild(new dijit.form.Button({
@@ -635,16 +520,7 @@ dojo.addOnLoad(function() {
             }
         }).domNode);
 
-        dojo.place('<span> Height: </span>', div)
-        div.appendChild(new dijit.form.ValidationTextBox({
-            value: params.height,
-            maxLength: 4,
-            regExp: "[0-9]+",
-            onChange: function(val) {
-                changed({height: val});
-            }
-        }).domNode);
-        dojo.style(div.lastChild, "width", "7ch");
+        zc.util.TextUI(div, 'Height', params, 'height', changed, 4, "[0-9]+");
 
         div.appendChild(new dijit.form.Button({
             label: '-',
@@ -662,7 +538,7 @@ dojo.addOnLoad(function() {
 
             }
         }).domNode);
-        tooltip(div.lastChild, 'Remove this chart.');
+        zc.util.tooltip(div.lastChild, 'Remove this chart.');
 
         charts[params.imgid] = this;
     };

@@ -350,6 +350,9 @@ index_html = """
 @import "%(dojoroot)s/dijit/themes/tundra/tundra.css";
 @import "%(dojoroot)s/dojox/grid/resources/Grid.css";
 </style>
+<script type="text/javascript">
+  djConfig={ baseUrl: "../../../", modulePaths: { zc: "static" }};
+</script>
 <script type="text/javascript"
         src="%(dojoroot)s/dojo/dojo.xd.js.uncompressed.js"
         djConfig="isDebug: true"></script>
