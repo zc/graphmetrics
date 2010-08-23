@@ -70,22 +70,32 @@ dojo.require("dojo.date.stamp");
     };
 
     var DateTimeUI = function (div, params, name, update) {
-        var date_widget = new dijit.form.DateTextBox({
-            value: string2date(params[name]),
-            onChange: function(date) {
+        var changeDate = function(date) {
                 params[name] = date2string(date);
                 update();
-            }
+        };
+        var date_widget = new dijit.form.DateTextBox({
+            value: string2date(params[name]),
+            onChange: changeDate
+        });
+        dojo.connect(date_widget.domNode, 'onkeypress', function (e) {
+            if (e.charCode == 0 && e.keyCode != 8)
+                changeDate(date_widget.getValue());
         });
         div.appendChild(date_widget.domNode);
         dojo.style(div.lastChild, "width", "12ch");
         dojo.place('<span>T</span>', div)
-        var time_widget = new dijit.form.TimeTextBox({
-            value: string2time(params[name+'_time']),
-            onChange: function(time) {
+        var changeTime = function(time) {
                 params[name+'_time'] = time2string(time);
                 update();
-            }
+        };
+        var time_widget = new dijit.form.TimeTextBox({
+            value: string2time(params[name+'_time']),
+            onChange: changeTime
+        });
+        dojo.connect(time_widget.domNode, 'onkeypress', function (e) {
+            if (e.charCode == 0 && e.keyCode != 8)
+                changeTime(time_widget.getValue());
         });
         div.appendChild(time_widget.domNode);
         dojo.style(div.lastChild, "width", "10ch");
@@ -98,17 +108,23 @@ dojo.require("dojo.date.stamp");
     };
 
     var TextUI = function (div, label, params, name, update, length, regex) {
+        var onChange = function(val) {
+            params[name] = val;
+            update();
+        };
         var widget = new dijit.form.ValidationTextBox({
             value: params[name],
             maxLength: length,
             regExp: regex,
             style: 'width: ' + (length+3) + 'ch',
-            onChange: function(val) {
-                params[name] = val;
-                update();
-            }
+            onChange: onChange
         });
         dojo.place('<span> '+label+': </span>', div)
+        dojo.connect(widget.domNode, 'onkeypress', function (e) {
+            if (e.charCode == 0 && e.keyCode != 8)
+                onChange(widget.getValue());
+        });
+
         div.appendChild(widget.domNode);
 
         this.update = function (settings) {
@@ -224,16 +240,7 @@ dojo.require("dojo.date.stamp");
             function(val){ changed({instance: val}); }
         ).domNode);
 
-        dojo.place('<span> Height: </span>', div)
-        div.appendChild(new dijit.form.ValidationTextBox({
-            value: params.height,
-            maxLength: 4,
-            regExp: "[0-9]+",
-            onChange: function(val) {
-                changed({height: val});
-            }
-        }).domNode);
-        dojo.style(div.lastChild, "width", "7ch");
+        TextUI(div, 'Height', params, 'height', changed, 4, "[0-9]+");
 
         div.appendChild(new dijit.form.Button({
             label: 'X',
