@@ -26,10 +26,11 @@ inst_tracelog_series = re.compile(
 tracelog_vars = tracelog_vars.split('|')
 
 def config(config):
-    global rrd_dir, rrd_updated, tracelog_rrd_dir
+    global rrd_dir, rrd_updated, tracelog_rrd_dir, tracelog_updated
     rrd_dir = config['metrics-rrd']
     rrd_updated = os.path.join(rrd_dir, '.updated')
     tracelog_rrd_dir = config['rrd']
+    tracelog_updated = os.path.join(tracelog_rrd_dir, '.updated')
 
 def who(request):
     if 'HTTP_AUTHORIZATION' in request.environ:
@@ -50,10 +51,14 @@ def rrd_id(series):
     return rrd_path, ds
 
 series = None
-series_update = None
+series_update = tracelog_update = None
 def get_series_data():
     global series, series_update
-    if series is not None and series_update >= os.stat(rrd_updated).st_mtime:
+    if series is not None and (
+        series_update >= os.stat(rrd_updated).st_mtime
+        and
+        tracelog_update >= os.stat(tracelog_updated).st_mtime
+        ):
         return series
     result = []
 
@@ -76,6 +81,7 @@ def get_series_data():
 
     series = sorted(result)
     series_update = os.stat(rrd_updated).st_mtime
+    tracelog_update = os.stat(tracelog_updated).st_mtime
     return series
 
 
