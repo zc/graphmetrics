@@ -53,7 +53,7 @@ def rrd_id(series):
 series = None
 series_update = tracelog_update = None
 def get_series_data():
-    global series, series_update
+    global series, series_update, tracelog_update
     if series is not None and (
         series_update >= os.stat(rrd_updated).st_mtime
         and
