@@ -13,7 +13,7 @@ import sys
 import tempfile
 import time
 
-dojoroot = 'http://ajax.googleapis.com/ajax/libs/dojo/1.4.3'
+dojoroot = 'http://ajax.googleapis.com/ajax/libs/dojo/1.5'
 
 inst_tracelog_rrd = re.compile(r'\S+__\S+__\S+.rrd$').match
 
@@ -108,12 +108,29 @@ class App:
 
     @bobo.query('/')
     def index(self):
+        # if self.user == 'jim':
+        #     return """
+        #     <html><head><title>ZIM Metrics</title>
+        #     <style type="text/css">
+        #     @import "%(dojoroot)s/dojo/resources/dojo.css";
+        #     @import "%(dojoroot)s/dijit/themes/tundra/tundra.css";
+        #     @import "%(dojoroot)s/dojox/grid/resources/Grid.css";
+        #     </style>
+        #     <script type="text/javascript"
+        #     src="%(dojoroot)s/dojo/dojo.js"
+        #     djConfig="isDebug: true"></script>
+        #     <script type="text/javascript" src="web.js"></script>
+        #     </head><body class="tundra"></body></html>
+        #     """ %  dict(dojoroot='/static')
         return index_html
 
     @bobo.query('/web.js', content_type="text/javascript")
     def js(self):
-        return open(os.path.join(os.path.dirname(__file__), 'metrics.js')
-                    ).read()
+        base = os.path.join(os.path.dirname(__file__), 'metrics')
+        path = base+'-%s.js' % self.user
+        if not os.path.exists(path):
+            path = base+'.js'
+        return open(path).read()
 
     def get_definitions(self, user=None):
         if user is None:
@@ -306,7 +323,7 @@ class App:
         old = definitions.get(name)
         if (old is not None) and old['charts'] and not overwrite:
             return json.dumps(dict(exists=True))
-        new = self.definitions.get(self.name)
+        new = _copydefs(self.definitions.get(self.name))
         if (new is not None) and new['charts']:
             definitions[name] = new
         else:
@@ -314,6 +331,13 @@ class App:
                 del definitions[name]
 
         return json.dumps(dict(url='../../%s/%s' % (me, name)))
+
+def _copydefs(defs):
+    if defs is None:
+        return defs
+    charts = defs['charts']
+    return persistent.mapping.PersistentMapping(
+        charts=BTrees.OOBTree.BTree(charts.items()))
 
 dst = pytz.timezone('US/Eastern').dst
 
