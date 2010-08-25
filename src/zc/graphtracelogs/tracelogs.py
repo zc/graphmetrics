@@ -406,10 +406,6 @@ class App:
                 return 'destroyed %r' % defs['charts']._p_oid
         return ''
 
-    def _copydefs(self, defs):
-        return persistent.mapping.PersistentMapping(
-                    charts=BTrees.OOBTree.BTree(charts.items()))
-
     @bobo.post(content_type='application/json')
     def save(self, name, overwrite=False):
         me = who(self.request)
@@ -417,7 +413,7 @@ class App:
         old = definitions.get(name)
         if (old is not None) and old['charts'] and not overwrite:
             return json.dumps(dict(exists=True))
-        new = self.definitions.get(self.name)
+        new = _copydefs(self.definitions.get(self.name))
         if (new is not None) and new['charts']:
             definitions[name] = new
         else:
@@ -425,6 +421,13 @@ class App:
                 del definitions[name]
 
         return json.dumps(dict(url='../../%s/%s' % (me, name)))
+
+def _copydefs(defs):
+    if defs is None:
+        return defs
+    charts = defs['charts']
+    return persistent.mapping.PersistentMapping(
+        charts=BTrees.OOBTree.BTree(charts.items()))
 
 dst = pytz.timezone('US/Eastern').dst
 
