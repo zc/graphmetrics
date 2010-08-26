@@ -1,6 +1,7 @@
 dojo.require("dijit.ColorPalette");
 dojo.require("dijit.Dialog");
 dojo.require("dijit.form.Button");
+dojo.require("dijit.form.CheckBox");
 dojo.require("dijit.form.FilteringSelect");
 dojo.require("dijit.form.TextBox");
 dojo.require("dijit.layout.BorderContainer");
@@ -8,8 +9,8 @@ dojo.require("dijit.layout.ContentPane");
 dojo.require("dijit.Menu");
 dojo.require("dojo.data.ItemFileReadStore");
 dojo.require("dojo.data.ItemFileWriteStore");
-dojo.require("dojox.grid.DataGrid");
 dojo.require("dojox.grid.cells._base");
+dojo.require("dojox.grid.DataGrid");
 dojo.require('zc.util');
 
 dojo.addOnLoad(function() {
@@ -31,15 +32,20 @@ dojo.addOnLoad(function() {
     };
     setTimeout(keep_refreshing, 60000);
 
+    var get_query_re = function (s) {
+        return new RegExp(s.split(/\s+/).join('.*'), 'i');
+    };
+
     var MySelect = dojo.declare(dijit.form.FilteringSelect, {
         _startSearchFromInput: function(){
             this.__last_search_value = this.focusNode.value;
 	    this._startSearch(this.focusNode.value);
 	},
-        __last_search_value: ''
+        __last_search_value: '',
+        _getQueryString: get_query_re
     });
 
-    var seriesSelectUI = function (node, callback) {
+    var seriesSelectUI = function (node, callback, allcallback) {
         dojo.place(
             '<span style="font-size: large; font-weight: bold">'+
             'Start here! -&gt;</span>',
@@ -49,23 +55,44 @@ dojo.addOnLoad(function() {
             store: series,
             queryExpr: '*${0}*',
             autoComplete: false,
-            searchDelay: 300,
+            //searchDelay: 300,
+            pageSize: 99,
             onChange: function (v) {
                 if (v)
                     callback(v);
                 select.reset();
             }
         });
+        jimselect = select;
         node.appendChild(select.domNode);
-        zc.util.tooltip(select.domNode, 'search string using * for wildcards');
+        zc.util.tooltip(select.domNode,
+                        'regular expression (spaces converted to .*)');
         node.appendChild(new dijit.form.Button({
             label: 'last search',
             onClick: function () {
                 if (select.__last_search_value) {
                     select._abortQuery();
-                    select.attr('displayedValue',
-                                select.__last_search_value);
+                    select.set('displayedValue', select.__last_search_value);
                     select._startSearch(select.__last_search_value);
+                }
+            }
+        }).domNode);
+        node.appendChild(new dijit.form.Button({
+            label: 'select all',
+            onClick: function () {
+                if (select.__last_search_value) {
+                    series.fetch({
+                        query: {id: get_query_re(select.__last_search_value)},
+                        onComplete: function (items) {
+                            if (items.length > 99) {
+                                alert('Too many '+items.length);
+                                return;
+                            }
+                            for (var i=0; i < items.length; i++)
+                                callback(series.getValue(items[i], 'id'));
+                        }
+                    });
+
                 }
             }
         }).domNode);
@@ -79,6 +106,23 @@ dojo.addOnLoad(function() {
 
     var seriesDialog = (function() {
         var dialog, _callback, store;
+        var aggregation_function = 'average';
+        var radio_buttons = {}, custom_text;
+
+        var pick_vname = function (store, callback, index) {
+            index = index || 0;
+            var vname = 'v'+index;
+            store.fetch({
+                query: {vname: vname},
+                onComplete: function (items) {
+                    if (items.length)
+                        pick_vname(store, callback, index+1);
+                    else
+                        callback(vname);
+                }
+            });
+            
+        };
 
         var build_dialog = function () {
             var border = new dijit.layout.BorderContainer({
@@ -88,12 +132,11 @@ dojo.addOnLoad(function() {
             dialog = new dijit.Dialog({
                 title:
                 'Select one (or more agregated) series to define a plot data.',
-                style: 'width: 640px; height: 300px',
+                style: 'width: 640px; height: 450px',
                 content: border
             });
             store = new dojo.data.ItemFileWriteStore({
                 data: {
-                    identifier: 'id',
                     items: []
                 }
             });
@@ -103,15 +146,8 @@ dojo.addOnLoad(function() {
                 region:  'top'
             }, function (node) {
                 seriesSelectUI(node, function (v) {
-                    store.fetchItemByIdentity({
-                        identity: v,
-                        onItem: function (item) {
-                            if (item)
-                                alert("The series is already selected.")
-                            else
-                                store.newItem({id: v});
-                        },
-                        onError: alert
+                    pick_vname(store, function (vname) {
+                        store.newItem({id: v, vname: vname});
                     });
                 });
             }));
@@ -120,6 +156,11 @@ dojo.addOnLoad(function() {
                 style: 'width: 100%; height: 100%',
                 // query: {id: '*'},
                 structure: [{
+                    field: 'vname',
+                    name: 'Variable Name',
+                    width: '100px',
+                    editable: true
+                }, {
                     field: 'id',
                     name: 'Series name (metrics element)',
                     width: '100%'
@@ -133,9 +174,45 @@ dojo.addOnLoad(function() {
                 })
             );
             border.addChild(newContentPane({
-                style: 'height: 9ex; width: 100%',
+                style: 'height: 23ex; width: 100%',
                 region: 'bottom'
             }, function (node) {
+
+                var div = dojo.place(
+                    '<div style="padding: 10px; width=100%">'
+                    +'Aggregation function:<br /></div>',
+                    node);
+
+                div.appendChild(
+                    (radio_buttons['average'] = new dijit.form.RadioButton({
+                        checked: true,
+                        id: 'average-aggretaion-radio-button',
+                        onClick: function () {aggregation_function='average'; },
+                        name: 'function'
+                    })).domNode);
+                dojo.place('<label for="average-aggretaion-radio-button">'
+                           +'Average       </label>', div)
+                div.appendChild(
+                    (radio_buttons['total'] = new dijit.form.RadioButton({
+                        id: 'total-aggretaion-radio-button',
+                        onClick: function () {aggregation_function='total'; },
+                        name: 'function'
+                    })).domNode);
+                dojo.place('<label for="total-aggretaion-radio-button">'
+                           +'Total</label><br />', div)
+                div.appendChild(
+                    (radio_buttons['custom'] = new dijit.form.RadioButton({
+                        id: 'custom-aggretaion-radio-button',
+                        onClick: function () {aggregation_function='custom'; },
+                        name: 'function'
+                    })).domNode);
+                dojo.place('<label for="custom-aggretaion-radio-button">'
+                           +'Custom (RRD RPN):</label></br>', div)
+                custom_text = new dijit.form.ValidationTextBox({
+                    style: 'width: 100%',
+                });
+                div.appendChild(custom_text.domNode);
+                
                 node.appendChild(new dijit.form.Button({
                     label: 'Cancel',
                     onClick: function () {
@@ -147,9 +224,21 @@ dojo.addOnLoad(function() {
                     onClick: function () {
                         store.fetch({
                             onComplete: function (items) {
-                                _callback(dojo.map(items, function (item) {
-                                    return store.getValue(item, 'id');
-                                }).join(','));
+                                _callback(
+                                    dojo.map(items, function (item) {
+                                        return store.getValue(
+                                            item, 'id');
+                                    }).join(',')
+                                    +
+                                        ',,'+aggregation_function
+                                    +
+                                        ','+dojo.map(items, function (item) {
+                                            return store.getValue(
+                                                item, 'vname');
+                                        }).join(',')
+                                    +
+                                        ',,'+custom_text.get('value')
+                                );
                                 dialog.hide();
                             }
                         });
@@ -170,12 +259,48 @@ dojo.addOnLoad(function() {
             grid.startup();
         };
 
+        var update_store = function (state) {
+            var raw = state;
+            state = state.split(',,');
+            var series = state[0].split(',');
+            if (state.length == 3) {
+                var vnames = state[1].split(',');
+                zc.util.assert(
+                    vnames.length == series.length + 1,
+                    "Wrong number of vnames "+raw);
+                radio_buttons[vnames[0]].set('checked', true)
+                aggregation_function = vnames[0]
+                vnames = vnames.slice(1);
+                for (var i=0; i < series.length; i++)
+                    store.newItem({id: series[i], vname: vnames[i]});
+                custom_text.set('value', state[2]);
+                return;
+            }
+            for (var i=0; i < series.length; i++)
+                store.newItem({id: series[i], vname: 'v'+i});
+
+            if (state.length == 2) {
+                zc.util.assert(
+                    state[1] == 'total',
+                    "expected total "+raw);
+                aggregation_function = 'total';
+                radio_buttons['total'].set('checked', true)
+            }
+            else
+                radio_buttons['average'].set('checked', true)
+        };
+
         // Entry point
-        return function (callback) {
+        return function (callback, state) {
             if (dialog == undefined)
                 build_dialog();
+            else
+                custom_text.set('value', '');
+
             _callback = callback;
             dialog.show();
+            if (state)
+                update_store(state)
         }
     })();
 
@@ -211,17 +336,25 @@ dojo.addOnLoad(function() {
             var grid = new dojox.grid.DataGrid({
                 store: store,
                 style: 'width: 100%; height: 100%',
+                onRowDblClick: function (e) {
+                    if (e.cellIndex != 4)
+                        return;
+                    var item = grid.getItem(e.rowIndex);
+                    seriesDialog(function (v) {
+                        store.setValue(item, 'data', v);
+                    }, store.getValue(item, 'data'));
+                },
                 structure: [
                     {
                         field: 'legend',
                         name: 'Legend',
-                        width: '10em',
+                        width: '100px',
                         editable: 'true'
                     },
                     {
                         field: 'color',
                         name: 'Color',
-                        width: '5ch',
+                        width: '40px',
                         formatter: function (v, rowindex) {
                             v = v || '#000000';
                             var button = new dijit.form.Button({
@@ -246,8 +379,8 @@ dojo.addOnLoad(function() {
                                     dialog.show()
                                 }
                             });
-                            dojo.style(button.containerNode, 'height', '2ex');
-                            dojo.style(button.containerNode, 'width', '1ch');
+                            dojo.style(button.containerNode, 'height', '15px');
+                            dojo.style(button.containerNode, 'width', '10px');
                             dojo.style(button.containerNode,
                                                      'backgroundColor', v);
                             return button;
@@ -256,13 +389,13 @@ dojo.addOnLoad(function() {
                     {
                         field: 'dash',
                         name: 'Dash',
-                        width: '3ch',
+                        width: '40px',
                         type: dojox.grid.cells.Bool, editable: true
                     },
                     {
                         field: 'thick',
                         name: 'Thick',
-                        width: '3ch',
+                        width: '40px',
                         type: dojox.grid.cells.Bool, editable: true
                     },
                     {
@@ -270,7 +403,28 @@ dojo.addOnLoad(function() {
                         width: 'auto',
                         name: 'Series',
                         formatter: function (v) {
-                            return v ? v.split(',').join('<br />') : '';
+                            if (! v)
+                                return '';
+                            v = v.split(',,');
+                            var data = v[0].split(',');
+                            if (v.length == 1) {
+                                if (data.length == 1)
+                                    return data[0];
+                                return data.join('<br />')+'<br/>average';
+                            }
+
+                            var vnames = v[1].split(',');
+                            if (v.length > 2 && vnames[0] == 'custom') {
+                                vnames = vnames.slice(1);
+                                var r = '';
+                                for (var i=0; i < vnames.length; i++)
+                                    r += (vnames[i] + '=' + data[i] + '<br />');
+                                r += 'custom rpn='+ v.slice(2).join(',,');
+                                return r;
+                            }
+                            if (data.length == 1)
+                                return data[0];
+                            return data.join('<br />')+'<br/>'+vnames[0];
                         }
                     }
                 ],
@@ -326,12 +480,12 @@ dojo.addOnLoad(function() {
                                 legend: '',
                                 color: default_colors[
                                     items.length % default_colors.length],
-                                dash: Math.floor(items.length /
+                                dash: !!(Math.floor(items.length /
                                                  default_colors.length
-                                                ) % 2,
-                                thick: Math.floor(items.length /
+                                                   ) % 2),
+                                thick: !!(Math.floor(items.length /
                                                   (default_colors.length*2)
-                                                 ) % 2,
+                                                    ) % 2),
                                 data: v
                             })
                         }
@@ -342,7 +496,7 @@ dojo.addOnLoad(function() {
                     'div', {style: 'float: right'}, node);
                 seriesSelectUI(select_div, newPlotItem);
                 select_div.appendChild(new dijit.form.Button({
-                    label: 'A',
+                    label: 'aggregate',
                     onClick: function () {
                         seriesDialog(newPlotItem);
                     }
