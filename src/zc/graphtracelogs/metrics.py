@@ -134,7 +134,7 @@ class App:
     def js(self):
         base = os.path.join(os.path.dirname(__file__), 'metrics')
         path = base+'-%s.js' % self.user
-        if not os.path.exists(path):
+        if not (self.name.startswith('dev-') and os.path.exists(path)):
             path = base+'.js'
         return open(path).read()
 
@@ -224,16 +224,11 @@ class App:
         for n, plot in sorted(plots.iteritems()):
             series = plot['data']
             if ',' in series:
-                cdef = ''
-                for i, s in enumerate(series.split(',')):
-                    rrd_path, data_source = rrd_id(s)
-                    dname = "v%s_%s" % (n, i)
-                    cdef += dname + ','
-                    lines.append(
-                        rrdtool.Def(dname, rrd_path, data_source=data_source,
-                                    cf=rrdtool.AverageCF)
-                        )
-                lines.append( "CDEF:v%s=%s%s,AVG" % (n, cdef, i+1))
+                rpn = aggregate(lines, n, series)
+                if not rpn:
+                    continue
+                print 'aggregate', n, `rpn`
+                lines.append("CDEF:v%s=%s" % (n, rpn))
             else:
                 rrd_path, data_source = rrd_id(series)
                 lines.append(
@@ -281,7 +276,25 @@ class App:
         if log:
             options['logarithmic'] = None
 
-        g.graph(*lines, **options)
+        try:
+            g.graph(*lines, **options)
+        except Exception, v:
+            v = '%s.%s: %s' % (v.__class__.__module__, v.__class__.__name__,
+                               v)
+            g = rrdtool.RoundRobinGraph(img_path)
+            options = dict(
+                width=int(width)-70,
+                height=height and int(height) or 200,
+                title=v,
+                )
+            try:
+                g.graph('HRULE:1',
+                    **options)
+            except Exception, v:
+                logging.exception('Trying to recover from %s', v)
+                raise
+
+            return open(img_path).read()
 
         updated = ''
         if self.user == who(self.request):
@@ -337,6 +350,42 @@ class App:
                 del definitions[name]
 
         return json.dumps(dict(url='../../%s/%s' % (me, name)))
+
+
+def aggregate(lines, basevar, data):
+    basevar = 'v%s' % basevar
+    data = data.split(',,')
+    n = 0
+    names = []
+    for s in data.pop(0).split(','):
+        rrd_path, data_source = rrd_id(s)
+        name = "%s_%s" % (basevar, n)
+        names.append(name)
+        lines.append(rrdtool.Def(name, rrd_path, data_source=data_source,
+                                 cf=rrdtool.AverageCF))
+        n += 1
+
+    if not n:
+        return ''
+
+    if not data or data[0].split(',')[0] == 'average':
+        # average
+        return ','.join(names)+',%s,AVG' % n
+    elif data[0].split(',')[0] == 'total':
+        if n == 1:
+            return names[0]
+        return ','.join(names)+(',ADDNAN'*(n-1))
+
+    assert len(data) > 1, data
+    anames = {}
+    assert data[0].startswith('custom,'), `data`
+    for i, name in enumerate(data.pop(0).split(',')[1:]):
+        anames[name] = names[i]
+    return ','.join(
+        ','.join(anames.get(e, e)
+                 for e in d.split(','))
+        for d in data)
+
 
 def _copydefs(defs):
     if defs is None:
