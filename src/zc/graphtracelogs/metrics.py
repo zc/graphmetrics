@@ -96,7 +96,7 @@ def home_(request):
 
 BIG = 1<<31
 
-plotparam = re.compile('(legend|color|data|thick|dash)(\d+)$').match
+plotparam = re.compile('(legend|color|data|thick|tick|dash)(\d+)$').match
 
 @bobo.subroute('/metrics/:user/:name', scan=True)
 class App:
@@ -241,11 +241,16 @@ class App:
                 legend = '- '+legend
             if len(legend) > 50:
                 legend = legend[:47]+'...'
-            lines.append("LINE%s:v%s#%s:%s%s" % (
-                2 if plot.get('thick') else 1,
-                n, plot['color'], legend,
-                ":dashes" if dash else "",
-                ))
+            if plot.get('tick'):
+              lines.append("TICK:v%s#%s55:1:%s" % (
+                  n, plot['color'], legend,
+                  ))
+            else:
+              lines.append("LINE%s:v%s#%s:%s%s" % (
+                  2 if plot.get('thick') else 1,
+                  n, plot['color'], legend,
+                  ":dashes" if dash else "",
+                  ))
 
         fd, img_path = tempfile.mkstemp('.png')
         g = rrdtool.RoundRobinGraph(img_path)
