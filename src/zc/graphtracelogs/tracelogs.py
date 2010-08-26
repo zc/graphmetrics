@@ -80,7 +80,7 @@ class App:
 
     @bobo.query('/')
     def index(self):
-        return index_html
+        return index_html % ("%s/%s" % (self.user, self.name))
 
     @bobo.query('/web.js', content_type="text/javascript")
     def js(self):
@@ -444,7 +444,7 @@ def parsedt(s):
     return int(time.mktime(t))
 
 index_html = """
-<html><head><title>Tracelog Graphs</title>
+<html><head><title>Tracelog: %%s</title>
 <style type="text/css">
 @import "%(dojoroot)s/dojo/resources/dojo.css";
 @import "%(dojoroot)s/dijit/themes/tundra/tundra.css";
