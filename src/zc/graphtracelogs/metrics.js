@@ -157,8 +157,8 @@ dojo.addOnLoad(function() {
                 // query: {id: '*'},
                 structure: [{
                     field: 'vname',
-                    name: 'Variable Name',
-                    width: '100px',
+                    name: 'Variable',
+                    width: '5em',
                     editable: true
                 }, {
                     field: 'id',
@@ -179,7 +179,7 @@ dojo.addOnLoad(function() {
             }, function (node) {
 
                 var div = dojo.place(
-                    '<div style="padding: 10px; width=100%">'
+                    '<div style="padding: 1em; width=100%">'
                     +'Aggregation function:<br /></div>',
                     node);
 
@@ -353,13 +353,13 @@ dojo.addOnLoad(function() {
                     {
                         field: 'legend',
                         name: 'Legend',
-                        width: '100px',
+                        width: '10em',
                         editable: 'true'
                     },
                     {
                         field: 'color',
                         name: 'Color',
-                        width: '40px',
+                        width: '4em',
                         formatter: function (v, rowindex) {
                             v = v || '#000000';
                             var button = new dijit.form.Button({
@@ -384,8 +384,8 @@ dojo.addOnLoad(function() {
                                     dialog.show()
                                 }
                             });
-                            dojo.style(button.containerNode, 'height', '15px');
-                            dojo.style(button.containerNode, 'width', '10px');
+                            dojo.style(button.containerNode, 'height', '2ex');
+                            dojo.style(button.containerNode, 'width', '1em');
                             dojo.style(button.containerNode,
                                                      'backgroundColor', v);
                             return button;
@@ -394,13 +394,13 @@ dojo.addOnLoad(function() {
                     {
                         field: 'dash',
                         name: 'Dash',
-                        width: '40px',
+                        width: '3em',
                         type: dojox.grid.cells.Bool, editable: true
                     },
                     {
                         field: 'thick',
                         name: 'Thick',
-                        width: '40px',
+                        width: '4em',
                         type: dojox.grid.cells.Bool, editable: true
                     },
                     {
