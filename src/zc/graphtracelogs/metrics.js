@@ -404,6 +404,12 @@ dojo.addOnLoad(function() {
                         type: dojox.grid.cells.Bool, editable: true
                     },
                     {
+                        field: 'tick',
+                        name: 'Tick',
+                        width: '3em',
+                        type: dojox.grid.cells.Bool, editable: true
+                    },
+                    {
                         field: 'data',
                         width: 'auto',
                         name: 'Series',
@@ -465,6 +471,7 @@ dojo.addOnLoad(function() {
                                                                   'color'),
                                             data: store.getValue(item, 'data'),
                                             dash: store.getValue(item, 'dash'),
+                                            tick: store.getValue(item, 'tick'),
                                             thick: store.getValue(item, 'thick')
                                         };
                                     }));
@@ -491,6 +498,7 @@ dojo.addOnLoad(function() {
                                 thick: !!(Math.floor(items.length /
                                                   (default_colors.length*2)
                                                     ) % 2),
+                                tick: false,
                                 data: v
                             })
                         }
@@ -551,6 +559,7 @@ dojo.addOnLoad(function() {
                 delete params['data'+i];
                 delete params['dash'+i];
                 delete params['thick'+i];
+                delete params['tick'+i];
             }
         } else
             params = {}
@@ -562,6 +571,7 @@ dojo.addOnLoad(function() {
             params['data'+i] = data[i].data;
             params['dash'+i] = data[i].dash ? 't' : '';
             params['thick'+i] = data[i].thick ? 't' : '';
+            params['tick'+i] = data[i].tick ? 't' : '';
         }
         return params;
     }
@@ -580,7 +590,8 @@ dojo.addOnLoad(function() {
                 color:  '#'+params['color'+i],
                 data: params['data'+i],
                 dash: params['dash'+i] == 't',
-                thick: params['thick'+i] == 't'
+                thick: params['thick'+i] == 't',
+                tick: params['tick'+i] == 't'
             });
         }
         return data;
