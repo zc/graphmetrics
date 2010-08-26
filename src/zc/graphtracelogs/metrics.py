@@ -128,7 +128,7 @@ class App:
         #     <script type="text/javascript" src="web.js"></script>
         #     </head><body class="tundra"></body></html>
         #     """ %  dict(dojoroot='/static')
-        return index_html
+        return index_html % ("%s/%s" % (self.user, self.name))
 
     @bobo.query('/web.js', content_type="text/javascript")
     def js(self):
@@ -423,7 +423,7 @@ def parsedt(s):
     return int(time.mktime(t))
 
 index_html = """
-<html><head><title>ZIM Metrics</title>
+<html><head><title>Metrics: %%s</title>
 <style type="text/css">
 @import "%(dojoroot)s/dojo/resources/dojo.css";
 @import "%(dojoroot)s/dijit/themes/tundra/tundra.css";
