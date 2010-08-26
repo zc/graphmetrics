@@ -10,8 +10,12 @@ dojo.require("dojo.date.stamp");
 (function () {
 //======================================================================
 
-zc.util.tooltip = function (node, text) {
-    new dijit.Tooltip({connectId: [node], label: text});
+zc.util.tooltip = function (node, text, options) {
+    params = {connectId: [node], label: text};
+    if (options)
+        dojo.mixin(params, options);
+    new dijit.Tooltip(params);
+    return node;
 };
 
 zc.util.TextUI = function (
@@ -138,6 +142,11 @@ zc.util.BoolUI = function (div, label, params, name, update) {
         widget.attr('checked',
                     settings[name] == 'y' ? 'checked': undefined);
     };
+};
+
+zc.util.assert = function (cond, label) {
+    if (! cond)
+        alert("Assertion Failed: "+label);
 };
 
 //======================================================================
