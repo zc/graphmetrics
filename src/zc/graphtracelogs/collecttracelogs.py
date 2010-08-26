@@ -95,7 +95,13 @@ class Instance(dict):
         self.minute = None
 
     def event(self, typ, rid, dt, minute, args):
-        if typ not in 'ICAE':
+        if typ == 'E' and rid in self:
+            if self[rid] == 'I':
+                self.waiting -= 1
+            del self[rid]
+            return
+
+        if typ not in 'ICA':
             return
 
         if (self.last is not None) and (dt < self.last):
