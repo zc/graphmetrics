@@ -28,7 +28,7 @@ zc.util.TextUI = function (
         value: params[name],
         maxLength: length,
         regExp: regex,
-        style: 'width: ' + (length+3) + 'ch',
+      style: 'width: ' + Math.ceil((length+3)/2) + 'em',
         onChange: onChange
     });
   dojo.place('<span> '+label+': </span>', div)
@@ -100,7 +100,7 @@ zc.util.DateTimeUI = function (div, params, name, update) {
             changeDate(date_widget.getValue());
     });
     div.appendChild(date_widget.domNode);
-    dojo.style(div.lastChild, "width", "12ch");
+    dojo.style(div.lastChild, "width", "6em");
     dojo.place('<span>T</span>', div)
     var changeTime = function(time) {
             params[name+'_time'] = time2string(time);
@@ -115,7 +115,7 @@ zc.util.DateTimeUI = function (div, params, name, update) {
             changeTime(time_widget.getValue());
     });
     div.appendChild(time_widget.domNode);
-    dojo.style(div.lastChild, "width", "10ch");
+    dojo.style(div.lastChild, "width", "5em");
 
     this.update = function (settings) {
         date_widget.attr('value', string2date(settings[name]) || null);
