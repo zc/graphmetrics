@@ -209,8 +209,13 @@ dojo.addOnLoad(function() {
                 dojo.place('<label for="custom-aggretaion-radio-button">'
                            +'Custom (RRD RPN):</label></br>', div)
                 custom_text = new dijit.form.ValidationTextBox({
-                    style: 'width: 100%',
+                        style: 'width: 100%',
                 });
+                zc.util.tooltip(
+                    custom_text.domNode,
+                    'rrdtool graph rpn expression',
+                    {position: ['above', 'below']}
+                );
                 div.appendChild(custom_text.domNode);
                 
                 node.appendChild(new dijit.form.Button({
