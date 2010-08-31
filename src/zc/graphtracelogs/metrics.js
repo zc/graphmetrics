@@ -342,7 +342,7 @@ dojo.addOnLoad(function() {
                 store: store,
                 style: 'width: 100%; height: 100%',
                 onRowDblClick: function (e) {
-                    if (e.cellIndex != 4)
+                    if (e.cellIndex != 5)
                         return;
                     var item = grid.getItem(e.rowIndex);
                     seriesDialog(function (v) {
