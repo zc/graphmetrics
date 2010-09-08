@@ -1,5 +1,24 @@
-import cPickle, datetime, logging, os, pytz, rrdtool, sys, time
+import cPickle
+import datetime
+import gzip
+import logging
+import optparse
+import os
+import pytz
+import rrdtool
+import socket
+import sys
+import time
 import zc.graphtracelogs
+
+parser = optparse.OptionParser("""\
+Usage: %prog [options] log_directory rrd_directory
+""")
+parser.add_option(
+    '--by-ip', '-i', action='store_true', dest=by_ip,
+    help="Store data by IP rather than by host name",
+    )
+
 
 # Gaaaa, pickles!
 sys.modules['zc.graphtracelogs.collect'] = sys.modules[__name__]
@@ -9,7 +28,17 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(name)s %(levelname)s %(message)r',
                     )
 
-def tliter(f, lineno=0):
+hostcache = {}
+def gethost(name):
+    r = hostcache.get(name)
+    now = time.time()
+    if r and (now-r[1] < 999):
+        return r[0]
+    host = socket.gethostbyname(name)
+    hostcache[name] = host, now
+    return host
+
+def tliter(f, lineno, by_ip):
     while 1:
         line = f.readline()
         if not line:
@@ -20,6 +49,9 @@ def tliter(f, lineno=0):
             if record[3] == ':':
                 # Gaaa syslog-ng 3
                 record.pop(3)
+
+            if by_ip:
+                record[0] = gethost(record[0])
             instance = '__'.join(record[:3])
             if 'T' in record[5]:
                 continue
@@ -179,10 +211,10 @@ def dt_diff_seconds(d2, d1):
     d = d2-d1
     return d.days*86400+d.seconds+d.microseconds/1000000.0
 
-def process_file(f, state, lineno=0):
+def process_file(f, state, by_ip, lineno=0):
     n=0
     for instance_name, typ, rid, dt, minute, args, lineno, line in tliter(
-        f, lineno):
+        f, lineno, by_ip):
         n += 1
         try:
             requests = state[instance_name]
@@ -198,23 +230,32 @@ def process_file(f, state, lineno=0):
 def main(args=None):
     if args is None:
         args = sys.argv[1:]
+    options, args = parser.parse_args(args)
     log_dir, rrd_dir = args
     log_dir_name = os.path.basename(log_dir)+'-'
     log_dir = os.path.abspath(log_dir)
     os.chdir(rrd_dir)
-    logs = sorted(f for f in os.listdir(log_dir) if f.endswith('-z4m.log'))
+    logs = sorted(f for f in os.listdir(log_dir)
+                  if f.endswith('-z4m.log') or f.endswith('-z4m.log.gz'))
     state = {}
+
     while len(logs) > 1:
         log_name = logs.pop(0)
         log_path = os.path.join(log_dir, log_name)
-        if os.path.exists(log_dir_name+log_name+'.endstate'):
-            state = cPickle.loads(
-                open(log_dir_name+log_name+'.endstate').read())
+        endstate_name = log_dir_name+log_name
+        if endstate_name.endswith('.gz'):
+            endstate_name = endstate_name[:-3]
+        endstate_name += '.endstate'
+        if os.path.exists(endstate_name):
+            state = cPickle.loads(open(endstate_name).read())
         else:
             logging.info('processing %s', log_path)
-            process_file(open(log_path), state)
-            open(log_dir_name+log_name+'.endstate', 'w').write(
-                cPickle.dumps(state))
+            if log_path.endswith('.gz'):
+                f = gzip.GzipFile(log_path)
+            else:
+                f = open(log_path)
+            process_file(f, state, by_ip)
+            open(endstate_name, 'w').write(cPickle.dumps(state))
 
     log_name, = logs
     while 1:
@@ -224,7 +265,7 @@ def main(args=None):
         log_file = open(log_path)
         lineno = 0
         while 1:
-            lineno, n = process_file(log_file, state, lineno)
+            lineno, n = process_file(log_file, state, by_ip, lineno)
             later_logs = ((not n)
                           and
                           sorted(f for f in os.listdir(log_dir)
@@ -233,7 +274,7 @@ def main(args=None):
             time.sleep(10)
             if later_logs:
                 # Make sure we got the tail of the file
-                lineno, n = process_file(log_file, state, lineno)
+                lineno, n = process_file(log_file, state, by_ip, lineno)
                 if n:
                     continue
                 open(log_dir_name+log_name+'.endstate', 'w').write(
