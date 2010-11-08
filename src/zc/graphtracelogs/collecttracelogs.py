@@ -95,6 +95,7 @@ def rrdcreate(rrd, t, name):
 dst = pytz.timezone('US/Eastern').dst
 
 def minute2ts(minute):
+    # Convert a local minute to a timetime
     args = map(int, minute[:10].split('-'))+map(int, minute[10:].split(':'))
     return int(time.mktime(
         tuple(args)+(0, 0, 0, bool(dst(datetime.datetime(*args)).seconds))))
@@ -224,7 +225,12 @@ def process_file(f, state, by_ip, lineno=0):
         if typ == 'S':
             requests.start(dt)
             continue
-        requests.event(typ, rid, dt, minute, args)
+        try:
+            requests.event(typ, rid, dt, minute, args)
+        except pytz.tzinfo.AmbiguousTimeError:
+            # Gaaaaaa fricking DST
+            requests.reset()
+
     return lineno, n
 
 def main(args=None):
