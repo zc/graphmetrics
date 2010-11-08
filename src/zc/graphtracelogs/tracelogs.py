@@ -20,7 +20,6 @@ dojoroot = 'http://ajax.googleapis.com/ajax/libs/dojo/1.4.3'
 
 inst_rrd = re.compile(r'\S+__\S+__\S+.rrd$').match
 numbered_instance = re.compile('instance(\d+)$').match
-addr_re = re.compile(r'\d{1,3}[.]\d{1,3}[.]\d{1,3}[.]\d{1,3}$').match
 
 def config(config):
     global rrd_dir, get_pools
@@ -72,22 +71,10 @@ BIG = 1<<31
 static = boboserver.static(
     '/static', os.path.join(os.path.dirname(__file__), 'static'))
 
-hostcache = {}
-def gethost(name):
-    r = hostcache.get(name)
-    now = time.time()
-    if r and (now-r[1] < 999):
-        return r[0]
-    host = socket.gethostbyname(name)
-    hostcache[name] = host, now
-    return host
-
 def rrdname(instance):
     instance += '.rrd'
     assert inst_rrd(instance)
-    instance = instance.split('__')
-    instance[0] = gethost(instance[0])
-    return '__'.join(instance)
+    return instance
 
 @bobo.subroute('/:user/:name', scan=True)
 class App:
@@ -150,20 +137,12 @@ class App:
         for inst in sorted(f[:-4] for f in os.listdir(rrd_dir)
                            if inst_rrd(f)):
             addr, customer, inst_name = inst.split('__')
-            if addr_re(addr):
-                try:
-                    host = socket.gethostbyaddr(addr)[0]
-                except:
-                    logging.exception("Couldn't look up addr %s" % addr)
-                    host = addr
-                inst = '%s__%s__%s' % (host, customer, inst_name)
-            else:
-                host = addr
-                try:
-                    addr = socket.gethostbyname(host)
-                except:
-                    logging.exception("Couldn't look up host %s" % host)
-                    addr = host
+            host = addr
+            try:
+                addr = socket.gethostbyname(host)
+            except:
+                logging.exception("Couldn't look up host %s" % host)
+                addr = host
 
             m = numbered_instance(inst_name)
             if m:
@@ -265,7 +244,9 @@ class App:
             n=0
             for instance in instances:
                 rrd_path = os.path.join(rrd_dir, rrdname(instance))
-                assert os.path.exists(rrd_path)
+                if not os.path.exists(rrd_path):
+                    logging.error("Can't find %r", rrd_path)
+                    continue
                 if compare:
                     thickness, dash, color = styles[n % nstyles]
                     legend = instance[:-4]
