@@ -11,15 +11,6 @@ import sys
 import time
 import zc.graphtracelogs
 
-parser = optparse.OptionParser("""\
-Usage: %prog [options] log_directory rrd_directory
-""")
-parser.add_option(
-    '--by-ip', '-i', action='store_true', dest=by_ip,
-    help="Store data by IP rather than by host name",
-    )
-
-
 # Gaaaa, pickles!
 sys.modules['zc.graphtracelogs.collect'] = sys.modules[__name__]
 zc.graphtracelogs.collect = sys.modules[__name__]
@@ -38,7 +29,7 @@ def gethost(name):
     hostcache[name] = host, now
     return host
 
-def tliter(f, lineno, by_ip):
+def tliter(f, lineno):
     while 1:
         line = f.readline()
         if not line:
@@ -50,8 +41,6 @@ def tliter(f, lineno, by_ip):
                 # Gaaa syslog-ng 3
                 record.pop(3)
 
-            if by_ip:
-                record[0] = gethost(record[0])
             instance = '__'.join(record[:3])
             if 'T' in record[5]:
                 continue
@@ -212,10 +201,10 @@ def dt_diff_seconds(d2, d1):
     d = d2-d1
     return d.days*86400+d.seconds+d.microseconds/1000000.0
 
-def process_file(f, state, by_ip, lineno=0):
+def process_file(f, state, lineno=0):
     n=0
     for instance_name, typ, rid, dt, minute, args, lineno, line in tliter(
-        f, lineno, by_ip):
+        f, lineno):
         n += 1
         try:
             requests = state[instance_name]
@@ -236,7 +225,6 @@ def process_file(f, state, by_ip, lineno=0):
 def main(args=None):
     if args is None:
         args = sys.argv[1:]
-    options, args = parser.parse_args(args)
     log_dir, rrd_dir = args
     log_dir_name = os.path.basename(log_dir)+'-'
     log_dir = os.path.abspath(log_dir)
@@ -260,7 +248,7 @@ def main(args=None):
                 f = gzip.GzipFile(log_path)
             else:
                 f = open(log_path)
-            process_file(f, state, by_ip)
+            process_file(f, state)
             open(endstate_name, 'w').write(cPickle.dumps(state))
 
     log_name, = logs
@@ -271,7 +259,7 @@ def main(args=None):
         log_file = open(log_path)
         lineno = 0
         while 1:
-            lineno, n = process_file(log_file, state, by_ip, lineno)
+            lineno, n = process_file(log_file, state, lineno)
             later_logs = ((not n)
                           and
                           sorted(f for f in os.listdir(log_dir)
@@ -280,7 +268,7 @@ def main(args=None):
             time.sleep(10)
             if later_logs:
                 # Make sure we got the tail of the file
-                lineno, n = process_file(log_file, state, by_ip, lineno)
+                lineno, n = process_file(log_file, state, lineno)
                 if n:
                     continue
                 open(log_dir_name+log_name+'.endstate', 'w').write(
