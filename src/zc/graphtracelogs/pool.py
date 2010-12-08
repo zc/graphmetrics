@@ -3,6 +3,7 @@ import logging
 import pprint
 import re
 import string
+import sys
 import time
 import zc.ngi
 import zc.ngi.adapters
@@ -19,6 +20,8 @@ __main__.PoolInformation = PoolInformation
 class Server(object):
     pass
 __main__.VServer = __main__.RServer = Server
+
+sys.modules['zim.processes.lbd'] = __main__
 
 extra_desc = re.compile(r"\{([a-z]+)\}").search
 
