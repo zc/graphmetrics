@@ -23,7 +23,7 @@ dojo.addOnLoad(function() {
             charts[i].update();
     };
     dojo.connect(window, 'onresize', update_on_resize);
-    
+
     var keep_refreshing = function () {
         for (var i in charts) {
             charts[i].refresh();
@@ -102,7 +102,7 @@ dojo.addOnLoad(function() {
         var pane = new dijit.layout.ContentPane(args);
         setup(pane.containerNode);
         return pane;
-    }; 
+    };
 
     var seriesDialog = (function() {
         var dialog, _callback, store;
@@ -121,7 +121,7 @@ dojo.addOnLoad(function() {
                         callback(vname);
                 }
             });
-            
+
         };
 
         var build_dialog = function () {
@@ -217,7 +217,7 @@ dojo.addOnLoad(function() {
                     {position: ['above', 'below']}
                 );
                 div.appendChild(custom_text.domNode);
-                
+
                 node.appendChild(new dijit.form.Button({
                     label: 'Cancel',
                     onClick: function () {
@@ -540,7 +540,7 @@ dojo.addOnLoad(function() {
                 store.newItem(items[i]);
             }
         }
-    
+
     })();
 
     var plotdata2plotparams = function (data, params) {
@@ -646,14 +646,14 @@ dojo.addOnLoad(function() {
         uis.push(new zc.util.DateTimeUI(div, params, 'end', changed));
 
         uis.push(new zc.util.TextUI(div, 'Trail', params, 'trail', changed,
-                            3, "^[0-9]+$",
+                            5, "^[0-9]+$",
                             'Trailing hours to show (ignoring time range)'));
         uis.push(new zc.util.TextUI(div, 'Step', params, 'step', changed,
                             4, "[0-9]+"));
         uis.push(new zc.util.TextUI(div, 'Min', params, 'lower_limit', changed,
-                            6, "[0-9]+"));
-        uis.push(new zc.util.TextUI(div, 'Max', params, 'upper_limit', changed,
                             9, "[0-9]+"));
+        uis.push(new zc.util.TextUI(div, 'Max', params, 'upper_limit', changed,
+                            12, "[0-9]+"));
         uis.push(new zc.util.BoolUI(div, 'Log', params, 'log', changed));
 
         // Apply same scaling
@@ -698,7 +698,7 @@ dojo.addOnLoad(function() {
             onClick: function () {
                 dojo.xhrPost({
                     url: 'destroy',
-                    postData: 'imgid='+params.imgid, 
+                    postData: 'imgid='+params.imgid,
                     load: function () {
                         dojo.destroy(div);
                         delete charts[params['imgid']];
@@ -763,7 +763,7 @@ dojo.addOnLoad(function() {
             });
         }
     }).domNode);
-    
+
     var savedMenuButton = function(saved) {
         var menu = new dijit.Menu({ style: "display: none;" });
         var base = window.location.href.match('(.*/)[^/]+/$')[1];
