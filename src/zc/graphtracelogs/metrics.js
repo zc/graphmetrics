@@ -191,7 +191,7 @@ dojo.addOnLoad(function() {
                         name: 'function'
                     })).domNode);
                 dojo.place('<label for="average-aggretaion-radio-button">'
-                           +'Average       </label>', div)
+                           +'Average       </label>', div);
                 div.appendChild(
                     (radio_buttons['total'] = new dijit.form.RadioButton({
                         id: 'total-aggretaion-radio-button',
@@ -199,7 +199,7 @@ dojo.addOnLoad(function() {
                         name: 'function'
                     })).domNode);
                 dojo.place('<label for="total-aggretaion-radio-button">'
-                           +'Total</label><br />', div)
+                           +'Total</label><br />', div);
                 div.appendChild(
                     (radio_buttons['custom'] = new dijit.form.RadioButton({
                         id: 'custom-aggretaion-radio-button',
@@ -207,9 +207,9 @@ dojo.addOnLoad(function() {
                         name: 'function'
                     })).domNode);
                 dojo.place('<label for="custom-aggretaion-radio-button">'
-                           +'Custom (RRD RPN):</label></br>', div)
+                           +'Custom (RRD RPN):</label></br>', div);
                 custom_text = new dijit.form.ValidationTextBox({
-                        style: 'width: 100%',
+                        style: 'width: 100%'
                 });
                 zc.util.tooltip(
                     custom_text.domNode,
@@ -273,8 +273,8 @@ dojo.addOnLoad(function() {
                 zc.util.assert(
                     vnames.length == series.length + 1,
                     "Wrong number of vnames "+raw);
-                radio_buttons[vnames[0]].set('checked', true)
-                aggregation_function = vnames[0]
+                radio_buttons[vnames[0]].set('checked', true);
+                aggregation_function = vnames[0];
                 vnames = vnames.slice(1);
                 for (var i=0; i < series.length; i++)
                     store.newItem({id: series[i], vname: vnames[i]});
@@ -289,10 +289,10 @@ dojo.addOnLoad(function() {
                     state[1] == 'total',
                     "expected total "+raw);
                 aggregation_function = 'total';
-                radio_buttons['total'].set('checked', true)
+                radio_buttons['total'].set('checked', true);
             }
             else
-                radio_buttons['average'].set('checked', true)
+                radio_buttons['average'].set('checked', true);
         };
 
         // Entry point
@@ -305,8 +305,8 @@ dojo.addOnLoad(function() {
             _callback = callback;
             dialog.show();
             if (state)
-                update_store(state)
-        }
+                update_store(state);
+        };
     })();
 
     var plotDialog = (function () {
@@ -381,7 +381,7 @@ dojo.addOnLoad(function() {
                                     dojo.connect(
                                         dialog, 'hide', dialog,
                                         'destroyRecursive');
-                                    dialog.show()
+                                    dialog.show();
                                 }
                             });
                             dojo.style(button.containerNode, 'height', '2ex');
@@ -438,7 +438,7 @@ dojo.addOnLoad(function() {
                             return data.join('<br />')+'<br/>'+vnames[0];
                         }
                     }
-                ],
+                ]
             });
 
             border.addChild(new dijit.layout.ContentPane({
@@ -483,7 +483,7 @@ dojo.addOnLoad(function() {
 
                 var default_colors = [
                     "#000000", "#0000ff", "#ff0000", "#dda0dd",
-                    "#800080", "#7fff00", "#6495ed", "#ffff00"]
+                    "#800080", "#7fff00", "#6495ed", "#ffff00"];
 
                 var newPlotItem = function (v) {
                     store.fetch({
@@ -500,10 +500,10 @@ dojo.addOnLoad(function() {
                                                     ) % 2),
                                 tick: false,
                                 data: v
-                            })
+                            });
                         }
                     });
-                }
+                };
 
                 var select_div = dojo.create(
                     'div', {style: 'float: right'}, node);
@@ -533,13 +533,13 @@ dojo.addOnLoad(function() {
             if (dialog == undefined)
                 build_dialog();
             _callback = callback;
-            params.title = title
+            params.title = title;
             dialog.show();
             title_ui.update(params);
             for (i = 0; i < items.length; i++) {
                 store.newItem(items[i]);
             }
-        }
+        };
 
     })();
 
@@ -548,12 +548,12 @@ dojo.addOnLoad(function() {
 
         if (params) {
             // First clean out old
-            var n = -1;
-            for (var i in params) {
+            var n = -1, i;
+            for (i in params) {
                 if (i.slice(0, 4) == 'data')
                     n = Math.max(n, i.slice(4));
             }
-            for (var i=0; i <= n; i++) {
+            for (i=0; i <= n; i++) {
                 delete params['legend'+i];
                 delete params['color'+i];
                 delete params['data'+i];
@@ -562,7 +562,7 @@ dojo.addOnLoad(function() {
                 delete params['tick'+i];
             }
         } else
-            params = {}
+            params = {};
 
         // now update
         for (var i=0; i < data.length; i++) {
@@ -574,17 +574,17 @@ dojo.addOnLoad(function() {
             params['tick'+i] = data[i].tick ? 't' : '';
         }
         return params;
-    }
+    };
 
     var plotparams2plotdata = function (params) {
         // Cmpute a data array from plot params
-        var n = -1;
-        for (var i in params) {
+        var i, n = -1;
+        for (i in params) {
             if (i.slice(0, 4) == 'data')
                 n = Math.max(n, i.slice(4));
         }
-        data = []
-        for (var i=0; i <= n; i++) {
+        var data = [];
+        for (i=0; i <= n; i++) {
             data.push({
                 legend: params['legend'+i],
                 color:  '#'+params['color'+i],
@@ -595,7 +595,7 @@ dojo.addOnLoad(function() {
             });
         }
         return data;
-    }
+    };
 
     var Chart = function (params) {
         var div = dojo.create('div',{}, dojo.body());
@@ -621,7 +621,7 @@ dojo.addOnLoad(function() {
         var changed = function (ob) {
             params.generation = (params.generation || 0) + 1;
             update(ob);
-        }
+        };
 
         this.refresh = function () {
             if (! params.end && ! params.end_time)
@@ -642,7 +642,7 @@ dojo.addOnLoad(function() {
         };
 
         uis.push(new zc.util.DateTimeUI(div, params, 'start', changed));
-        dojo.place('<span> to </span>', div)
+        dojo.place('<span> to </span>', div);
         uis.push(new zc.util.DateTimeUI(div, params, 'end', changed));
 
         uis.push(new zc.util.TextUI(div, 'Trail', params, 'trail', changed,
@@ -683,7 +683,7 @@ dojo.addOnLoad(function() {
                 plotDialog(
                     params.title, plotparams2plotdata(params),
                     function(title, data) {
-                        params.title = title
+                        params.title = title;
                         plotdata2plotparams(data, params);
                         changed();
                     });
@@ -703,7 +703,7 @@ dojo.addOnLoad(function() {
                         dojo.destroy(div);
                         delete charts[params['imgid']];
                     },
-                    error: function (error) {alert(error)}
+                    error: function (error) {alert(error); }
                 });
 
             }
@@ -746,7 +746,7 @@ dojo.addOnLoad(function() {
                                 url: 'save.json',
                                 postData: dojo.objectToQuery({
                                     name: save_name,
-                                    overwrite: 'y',
+                                    overwrite: 'y'
                                 }),
                                 handleAs: 'json',
                                 load: function (data) {
@@ -759,7 +759,7 @@ dojo.addOnLoad(function() {
                     else
                         window.location.assign(data.url);
                 },
-                error: function (error) {alert(error)}
+                error: function (error) {alert(error); }
             });
         }
     }).domNode);
@@ -779,7 +779,7 @@ dojo.addOnLoad(function() {
         return new dijit.form.ComboButton({
             label: "Saved",
             dropDown: menu
-        })
+        });
     };
 
     dojo.xhrGet({
@@ -806,7 +806,7 @@ dojo.addOnLoad(function() {
                     }
                     dojo.destroy(button_div.firstChild);
                 },
-                error: function (error) {alert(error)}
+                error: function (error) {alert(error); }
             });
 
             button_div.appendChild(new dijit.form.Button({
@@ -824,6 +824,6 @@ dojo.addOnLoad(function() {
             button_div.appendChild(savedMenuButton(data.saved).domNode);
 
         },
-        error: function (error) {alert(error)}
+        error: function (error) {alert(error); }
     });
 });
