@@ -256,7 +256,7 @@ class App:
         g = rrdtool.RoundRobinGraph(img_path)
 
         options = dict(
-            width=int(width)-70,
+            width=int(width)-111,
             height=height and int(height) or 200,
             title=title,
             )
@@ -280,6 +280,8 @@ class App:
 
         if log:
             options['logarithmic'] = None
+
+        options['right-axis'] = '1:0'
 
         try:
             g.graph(*lines, **options)
