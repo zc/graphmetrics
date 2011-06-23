@@ -78,8 +78,8 @@ class Collector:
                         f.close()
                     rrd.rrd_last = rrd.last()
                 if ts < rrd.rrd_last:
-                    logger.error('ts out of order %s %s %s %s',
-                                 line, path, ts, rrd.rrd_last)
+                    # logger.error('ts out of order %s %s %s %s',
+                    #              line, path, ts, rrd.rrd_last)
                     continue
                 if ts == rrd.rrd_last:
                     ts += 1
