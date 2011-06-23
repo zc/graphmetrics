@@ -17,7 +17,7 @@ dojo.addOnLoad(function() {
             charts[i].update();
     };
     dojo.connect(window, 'onresize', update_on_resize);
-    
+
     var keep_refreshing = function () {
         for (var i in charts) {
             charts[i].refresh();
@@ -50,7 +50,7 @@ dojo.addOnLoad(function() {
         var changed = function (ob) {
             params.generation = (params.generation || 0) + 1;
             update(ob);
-        }
+        };
 
         this.refresh = function () {
             if (! params.end && ! params.end_time)
@@ -71,11 +71,11 @@ dojo.addOnLoad(function() {
         };
 
         uis.push(new zc.util.DateTimeUI(div, params, 'start', changed));
-        dojo.place('<span> to </span>', div)
+        dojo.place('<span> to </span>', div);
         uis.push(new zc.util.DateTimeUI(div, params, 'end', changed));
 
         uis.push(new zc.util.TextUI(div, 'Trail', params, 'trail', changed,
-                            3, "^[0-9]+$"));
+                            5, "^[0-9]+$"));
         uis.push(new zc.util.TextUI(div, 'Step', params, 'step', changed,
                             4, "[0-9]+"));
         uis.push(new zc.util.TextUI(div, 'Min', params, 'lower_limit', changed,
@@ -104,8 +104,7 @@ dojo.addOnLoad(function() {
         }).domNode);
         new dijit.Tooltip({
             connectId: [div.lastChild],
-            label: 'Apply this scaling to all charts',
-
+            label: 'Apply this scaling to all charts'
         });
 
         // Select data to show
@@ -121,12 +120,12 @@ dojo.addOnLoad(function() {
             onClick: function () {
                 dojo.xhrPost({
                     url: 'destroy',
-                    postData: 'imgid='+params.imgid, 
+                    postData: 'imgid='+params.imgid,
                     load: function () {
                         dojo.destroy(div);
                         delete charts[params['imgid']];
                     },
-                    error: function (error) {alert(error)}
+                    error: function (error) {alert(error); }
                 });
 
             }
@@ -163,7 +162,7 @@ dojo.addOnLoad(function() {
         return new dijit.form.ComboButton({
             label: label,
             dropDown: customer_menu
-        })
+        });
     };
 
     var savedMenuButton = function(saved) {
@@ -181,7 +180,7 @@ dojo.addOnLoad(function() {
         return new dijit.form.ComboButton({
             label: "Saved",
             dropDown: menu
-        })
+        });
     };
 
     dojo.addOnLoad(function() {
@@ -218,7 +217,7 @@ dojo.addOnLoad(function() {
                                     url: 'save.json',
                                     postData: dojo.objectToQuery({
                                         name: save_name,
-                                        overwrite: 'y',
+                                        overwrite: 'y'
                                     }),
                                     handleAs: 'json',
                                     load: function (data) {
@@ -231,7 +230,7 @@ dojo.addOnLoad(function() {
                         else
                             window.location.assign(data.url);
                     },
-                    error: function (error) {alert(error)}
+                    error: function (error) {alert(error); }
                 });
             }
         }).domNode);
@@ -252,12 +251,12 @@ dojo.addOnLoad(function() {
                         }
                         dojo.destroy(button_div.firstChild);
                     },
-                    error: function (error) {alert(error)}
+                    error: function (error) {alert(error); }
                 });
 
                 button_div.appendChild(
                     newInstanceMenuButton("New chart:", function (inst) {
-                        new Chart({instance: inst})
+                        new Chart({instance: inst});
                     }).domNode);
                 button_div.appendChild(new dijit.form.Button({
                     label: 'Save',
@@ -265,7 +264,7 @@ dojo.addOnLoad(function() {
                 }).domNode);
                 button_div.appendChild(savedMenuButton(data.saved).domNode);
             },
-            error: function (error) {alert(error)}
+            error: function (error) {alert(error); }
         });
     });
 });
