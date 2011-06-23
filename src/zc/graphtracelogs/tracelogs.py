@@ -20,6 +20,7 @@ dojoroot = 'http://ajax.googleapis.com/ajax/libs/dojo/1.4.3'
 
 inst_rrd = re.compile(r'\S+__\S+__\S+.rrd$').match
 numbered_instance = re.compile('instance(\d+)$').match
+portly_instance = re.compile('-(\d\d\d+)').search
 
 def config(config):
     global rrd_dir, get_pools
@@ -144,14 +145,19 @@ class App:
                 logging.exception("Couldn't look up host %s" % host)
                 addr = host
 
-            m = numbered_instance(inst_name)
+            port = None
+            m = portly_instance(inst_name)
             if m:
-                port_func = port_funcs.get(customer)
-                if port_func is not None:
-                    port = port_func(int(m.group(1)))
-                    by_addr["%s:%s" % (addr, port)] = inst
-            elif inst_name == 'media-instance':
-                port = 17080
+                port = int(m.group(1))
+            else:
+                m = numbered_instance(inst_name)
+                if m:
+                    port_func = port_funcs.get(customer)
+                    if port_func is not None:
+                        port = port_func(int(m.group(1)))
+                elif inst_name == 'media-instance':
+                    port = 17080
+            if port:
                 by_addr["%s:%s" % (addr, port)] = inst
             hosts = customers.get(customer)
             if hosts is None:
