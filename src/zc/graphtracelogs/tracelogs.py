@@ -290,6 +290,7 @@ class App:
                                 cf=rrdtool.AverageCF)
                     )
                 n += 1
+
             if not compare:
                 lines.extend([
                     "CDEF:rpm=rpm0,UN,0,rpm0,IF,%s" % (
@@ -302,7 +303,7 @@ class App:
                         ','.join("bl%s,UN,0,bl%s,IF,+" % (i, i)
                                  for i in range(1, n))),
                     ])
-                if log or mh:
+                if 1 or log or mh:
                     lines.append(
                         "CDEF:spr=spr0,UN,0,spr0,IF,%s" % (
                             ','.join("spr%s,UN,0,spr%s,IF,+" % (i, i)
@@ -329,7 +330,7 @@ class App:
                 rrdtool.Def("start", rrd_path, data_source="start",
                             cf=rrdtool.AverageCF),
                 ])
-            if log:
+            if 1 or log:
                 lines.append(
                     rrdtool.Def("spr", rrd_path, data_source="spr",
                                 cf=rrdtool.AverageCF),
@@ -375,7 +376,7 @@ class App:
                     rrdtool.LINE1("bl", rrggbb="e082e6", legend="waiting"),
                     ])
 
-                if log:
+                if 1 or log:
                     lines.append(
                         rrdtool.LINE1("spr", rrggbb="93f9fb", legend="max rpm"),
                         )
