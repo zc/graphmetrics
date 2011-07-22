@@ -256,10 +256,11 @@ class App:
                 if compare:
                     thickness, dash, color = styles[n % nstyles]
                     legend = instance[:-4]
-                    legend = "%s-%s" % (legend.split('.')[0],
-                                        legend.split('__')[-1])
+                    legend = "%s-%s" % (
+                        ''.join(legend.split('.')[0:2]).replace('app', ''),
+                        legend.split('__')[-1])
                     if dash:
-                        legend = '-' + legend
+                        legend = '- ' + legend
                     lines.extend([
                         rrdtool.Def("v%s" % n, rrd_path, data_source=compare,
                                     cf=rrdtool.AverageCF),
