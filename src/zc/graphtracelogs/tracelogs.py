@@ -38,13 +38,6 @@ def config(config):
             ZConfig.configureLoggers(config['logging'].replace('$(', '%('))
             logging.been_configured = True
 
-port_funcs = dict(
-    ghm = (lambda i: (i+8)*1000+80),
-    cnhi = (lambda i: 14000+i*100+80),
-    hd = (lambda i: 11000+i*100+80),
-    tbc = (lambda i: 13000+i*100+80),
-    )
-
 hex2 = lambda v: ('0'+hex(v)[2:])[-2:]
 
 styles = []
@@ -135,8 +128,12 @@ class App:
         customers = {}
         by_addr = {}
         pools = {}
-        for inst in sorted(f[:-4] for f in os.listdir(rrd_dir)
-                           if inst_rrd(f)):
+        for inst in sorted(
+            (f[:-4] for f in os.listdir(rrd_dir) if inst_rrd(f)),
+            key=(lambda name:
+                 os.stat(os.path.join(rrd_dir, name+'.rrd')).st_mtime
+                 ),
+            ):
             addr, customer, inst_name = inst.split('__')
             host = addr
             try:
@@ -149,15 +146,6 @@ class App:
             m = portly_instance(inst_name)
             if m:
                 port = int(m.group(1))
-            else:
-                m = numbered_instance(inst_name)
-                if m:
-                    port_func = port_funcs.get(customer)
-                    if port_func is not None:
-                        port = port_func(int(m.group(1)))
-                elif inst_name == 'media-instance':
-                    port = 17080
-            if port:
                 by_addr["%s:%s" % (addr, port)] = inst
             hosts = customers.get(customer)
             if hosts is None:
