@@ -1,6 +1,7 @@
 import BTrees.OOBTree
 import bobo
 import boboserver
+import collections
 import datetime
 import json
 import logging
@@ -21,6 +22,7 @@ dojoroot = 'http://ajax.googleapis.com/ajax/libs/dojo/1.4.3'
 inst_rrd = re.compile(r'\S+__\S+__\S+.rrd$').match
 numbered_instance = re.compile('instance(\d+)$').match
 portly_instance = re.compile('-(\d\d\d+)').search
+unportly_instance = re.compile('([a-z]+)\d+').match
 
 def config(config):
     global rrd_dir, get_pools
@@ -147,6 +149,23 @@ class App:
             if m:
                 port = int(m.group(1))
                 by_addr["%s:%s" % (addr, port)] = inst
+
+                if customer not in customers:
+                    customers[customer] = {}
+                instance_type = inst_name.rsplit('-', 1)[0]+'-instances'
+                if instance_type not in customers[customer]:
+                    customers[customer][instance_type] = []
+                customers[customer][instance_type].append((inst, inst))
+            else:
+                m = unportly_instance(inst_name)
+                if m:
+                    if customer not in customers:
+                        customers[customer] = {}
+                    instance_type = m.group(1)+'-workers'
+                    if instance_type not in customers[customer]:
+                        customers[customer][instance_type] = []
+                    customers[customer][instance_type].append((inst, inst))
+
             hosts = customers.get(customer)
             if hosts is None:
                 hosts = customers[customer] = {}
@@ -155,6 +174,29 @@ class App:
             if instances is None:
                 instances = hosts[host] = []
             instances.append((inst_name, inst))
+
+        for customer, pools in customers.items():
+            for label, instances in pools.items():
+                if label.endswith('-instances') or label.endswith('-workers'):
+                    instances.sort()
+                    if len(instances) > 1:
+                        all = (("%s-%s," % (customer, label)) +
+                               (','.join(i[0] for i in instances)))
+                        compare_rpm = (
+                            (',rpm,%s-%s-rpm,' % (customer, label))
+                            + (','.join(i[0] for i in instances)))
+                        compare_max_rpm = (
+                            (',spr,%s-%s-max-rpm,' % (customer, label))
+                            + (','.join(i[0] for i in instances)))
+                        max_headroom = (
+                            (',mh,%s-%s-max-headroom,' % (customer, label))
+                            + (','.join(i[0] for i in instances)))
+                        instances[0:0] = [
+                            ('all', all),
+                            ('compare rpm', compare_rpm),
+                            ('compare max rpm', compare_max_rpm),
+                            ('max headroon', max_headroom),
+                            ]
 
         for info, addrs in get_pools():
             customer = info['customer'].lower()
@@ -395,7 +437,10 @@ class App:
                 updated = ' updated'
 
         os.close(fd)
-        return open(img_path).read()
+        with open(img_path) as f:
+            result = f.read()
+        os.remove(img_path)
+        return result
 
     @bobo.post('/destroy')
     def destroy(self, imgid):
