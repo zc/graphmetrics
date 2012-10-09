@@ -9,7 +9,7 @@ dojo.require('zc.util');
 
 dojo.addOnLoad(function() {
     var imgid = 0;
-    var customers;
+    var customers = [];
     var charts = {};
 
     var update_on_resize = function () {
@@ -185,12 +185,14 @@ dojo.addOnLoad(function() {
 
     dojo.addOnLoad(function() {
         var button_div = dojo.create('div',{}, dojo.body());
+        dojo.create('div',
+                    {innerHTML: 'Getting tracelog info ...'}, button_div);
         var save_dialog = new dijit.Dialog({
             title: 'Save as:',
             style: 'width: 20em'
         });
         var save_name;
-        save_dialog.containerNode.appendChild(
+        save_dialog.containerNode.appendChild(Tw
             new dijit.form.ValidationTextBox({
                 regExp: "[0-9a-zA-z_.-]+",
                 onChange: function (val) { save_name = val; }
@@ -242,7 +244,6 @@ dojo.addOnLoad(function() {
                     params.imgid = data.imgids[i];
                     new Chart(params);
                 }
-                // dojo.destroy(button_div.firstChild);
             },
             error: function (error) {alert(error)}
         });
@@ -252,6 +253,7 @@ dojo.addOnLoad(function() {
             load: function (data) {
                 customers = data.customers;
 
+                dojo.destroy(button_div.firstChild);
                 button_div.appendChild(
                     newInstanceMenuButton("New chart:", function (inst) {
                         new Chart({instance: inst});
