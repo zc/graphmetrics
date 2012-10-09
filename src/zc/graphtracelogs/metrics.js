@@ -651,9 +651,9 @@ dojo.addOnLoad(function() {
         uis.push(new zc.util.TextUI(div, 'Step', params, 'step', changed,
                             4, "[0-9]+"));
         uis.push(new zc.util.TextUI(div, 'Min', params, 'lower_limit', changed,
-                            9, "[0-9]+"));
+                            9, "[0-9]+(\.[0-9]+)?"));
         uis.push(new zc.util.TextUI(div, 'Max', params, 'upper_limit', changed,
-                            12, "[0-9]+"));
+                            12, "[0-9]+(\.[0-9]+)?|\.[0-9]+"));
         uis.push(new zc.util.BoolUI(div, 'Log', params, 'log', changed));
 
         // Apply same scaling
