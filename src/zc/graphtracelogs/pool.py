@@ -23,6 +23,13 @@ __main__.VServer = __main__.RServer = Server
 
 sys.modules['zim.processes.lbd'] = __main__
 
+class _reconstructor_mp:
+    def __init__(self, *args):
+        pass
+__main__._reconstructor_mp = _reconstructor_mp
+
+sys.modules['zim.state'] = __main__
+
 extra_desc = re.compile(r"\{([a-z]+)\}").search
 
 class Sized(zc.ngi.adapters.Sized):
