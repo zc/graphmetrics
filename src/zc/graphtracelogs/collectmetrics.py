@@ -88,10 +88,12 @@ class Collector:
             except GeneratorExit:       # Disconnected
                 logger.info('disconnected')
                 self.connector(self.addr, self)
+                break
             except:                     # Unexpected error
                 logger.exception('failure in input handler')
                 connection.close()
                 self.connector(self.addr, self)
+                break
 
     def failed_connect(self, reason):
         # We can sleep here because we essentially own the thread.
