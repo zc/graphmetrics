@@ -261,10 +261,10 @@ class App:
             title=title,
             )
         if upper_limit:
-            options['upper_limit'] = int(upper_limit)
+            options['upper_limit'] = float(upper_limit)
             options['rigid'] = None
         if lower_limit:
-            options['lower_limit'] = int(lower_limit)
+            options['lower_limit'] = float(lower_limit)
             options['rigid'] = None
 
         if trail:
@@ -324,7 +324,10 @@ class App:
         os.close(fd)
         logging.info("%r show %r %r %r%s",
                      who(self.request), self.user, self.name, imgid, updated)
-        return open(img_path).read()
+        with open(img_path) as f:
+            result = f.read()
+        os.remove(img_path)
+        return result
 
     @bobo.post('/destroy')
     def destroy(self, imgid):
