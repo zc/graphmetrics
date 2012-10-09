@@ -25,7 +25,7 @@ dojo.addOnLoad(function() {
             charts[i].update();
     };
     dojo.connect(window, 'onresize', update_on_resize);
-    
+
     var keep_refreshing = function () {
         for (var i in charts) {
             charts[i].refresh();
@@ -191,7 +191,7 @@ dojo.addOnLoad(function() {
         var pane = new dijit.layout.ContentPane(args);
         setup(pane.containerNode);
         return pane;
-    }; 
+    };
 
     var seriesDialog = (function() {
         var dialog, _callback, store;
@@ -467,7 +467,7 @@ dojo.addOnLoad(function() {
                 store.newItem(items[i]);
             }
         }
-    
+
     })();
 
     var plotdata2plotparams = function (data, params) {
@@ -625,7 +625,7 @@ dojo.addOnLoad(function() {
             onClick: function () {
                 dojo.xhrPost({
                     url: 'destroy',
-                    postData: 'imgid='+params.imgid, 
+                    postData: 'imgid='+params.imgid,
                     load: function () {
                         dojo.destroy(div);
                         delete charts[params['imgid']];
@@ -641,7 +641,6 @@ dojo.addOnLoad(function() {
     };
 
     var button_div = dojo.create('div',{}, dojo.body());
-    dojo.create('div', {innerHTML: 'wait for it ...'}, button_div);
     var save_dialog = new dijit.Dialog({
         title: 'Save as:',
         style: 'width: 20em'
@@ -690,7 +689,7 @@ dojo.addOnLoad(function() {
             });
         }
     }).domNode);
-    
+
     var savedMenuButton = function(saved) {
         var menu = new dijit.Menu({ style: "display: none;" });
         var base = window.location.href.match('(.*/)[^/]+/$')[1];
@@ -710,6 +709,20 @@ dojo.addOnLoad(function() {
     };
 
     dojo.xhrGet({
+        url: 'load.json',
+        handleAs: 'json',
+        load: function (data) {
+            for (var i=0; i < data.charts.length; i++) {
+                params = data.charts[i];
+                params.imgid = data.imgids[i];
+                new Chart(params);
+            }
+            dojo.destroy(button_div.firstChild);
+        },
+        error: function (error) {alert(error)}
+    });
+
+    dojo.xhrGet({
         url: 'get_series.json',
         handleAs: 'json',
         load: function (data) {
@@ -720,20 +733,6 @@ dojo.addOnLoad(function() {
                            return {id: v};
                        })
                       }
-            });
-
-            dojo.xhrGet({
-                url: 'load.json',
-                handleAs: 'json',
-                load: function (data) {
-                    for (var i=0; i < data.charts.length; i++) {
-                        params = data.charts[i];
-                        params.imgid = data.imgids[i];
-                        new Chart(params);
-                    }
-                    dojo.destroy(button_div.firstChild);
-                },
-                error: function (error) {alert(error)}
             });
 
             button_div.appendChild(new dijit.form.Button({

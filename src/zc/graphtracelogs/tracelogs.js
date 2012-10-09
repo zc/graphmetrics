@@ -20,7 +20,7 @@ dojo.require("dojo.date.stamp");
             charts[i].update();
     };
     dojo.connect(window, 'onresize', update_on_resize);
-    
+
     var keep_refreshing = function () {
         for (var i in charts) {
             charts[i].refresh();
@@ -241,7 +241,7 @@ dojo.require("dojo.date.stamp");
             onClick: function () {
                 dojo.xhrPost({
                     url: 'destroy',
-                    postData: 'imgid='+params.imgid, 
+                    postData: 'imgid='+params.imgid,
                     load: function () {
                         dojo.destroy(div);
                         delete charts[params['imgid']];
@@ -306,7 +306,6 @@ dojo.require("dojo.date.stamp");
 
     dojo.addOnLoad(function() {
         var button_div = dojo.create('div',{}, dojo.body());
-        dojo.create('div', {innerHTML: 'wait for it ...'}, button_div);
         var save_dialog = new dijit.Dialog({
             title: 'Save as:',
             style: 'width: 20em'
@@ -356,24 +355,23 @@ dojo.require("dojo.date.stamp");
             }
         }).domNode);
         dojo.xhrGet({
+            url: 'load.json',
+            handleAs: 'json',
+            load: function (data) {
+                for (var i=0; i < data.charts.length; i++) {
+                    params = data.charts[i];
+                    params.imgid = data.imgids[i];
+                    new Chart(params);
+                }
+                dojo.destroy(button_div.firstChild);
+            },
+            error: function (error) {alert(error)}
+        });
+        dojo.xhrGet({
             url: 'get_instances.json',
             handleAs: 'json',
             load: function (data) {
                 customers = data.customers;
-
-                dojo.xhrGet({
-                    url: 'load.json',
-                    handleAs: 'json',
-                    load: function (data) {
-                        for (var i=0; i < data.charts.length; i++) {
-                            params = data.charts[i];
-                            params.imgid = data.imgids[i];
-                            new Chart(params);
-                        }
-                        dojo.destroy(button_div.firstChild);
-                    },
-                    error: function (error) {alert(error)}
-                });
 
                 button_div.appendChild(
                     newInstanceMenuButton("New chart:", function (inst) {
