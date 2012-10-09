@@ -185,7 +185,6 @@ dojo.addOnLoad(function() {
 
     dojo.addOnLoad(function() {
         var button_div = dojo.create('div',{}, dojo.body());
-        dojo.create('div', {innerHTML: 'wait for it ...'}, button_div);
         var save_dialog = new dijit.Dialog({
             title: 'Save as:',
             style: 'width: 20em'
@@ -235,24 +234,23 @@ dojo.addOnLoad(function() {
             }
         }).domNode);
         dojo.xhrGet({
+            url: 'load.json',
+            handleAs: 'json',
+            load: function (data) {
+                for (var i=0; i < data.charts.length; i++) {
+                    params = data.charts[i];
+                    params.imgid = data.imgids[i];
+                    new Chart(params);
+                }
+                // dojo.destroy(button_div.firstChild);
+            },
+            error: function (error) {alert(error)}
+        });
+        dojo.xhrGet({
             url: 'get_instances.json',
             handleAs: 'json',
             load: function (data) {
                 customers = data.customers;
-
-                dojo.xhrGet({
-                    url: 'load.json',
-                    handleAs: 'json',
-                    load: function (data) {
-                        for (var i=0; i < data.charts.length; i++) {
-                            params = data.charts[i];
-                            params.imgid = data.imgids[i];
-                            new Chart(params);
-                        }
-                        dojo.destroy(button_div.firstChild);
-                    },
-                    error: function (error) {alert(error); }
-                });
 
                 button_div.appendChild(
                     newInstanceMenuButton("New chart:", function (inst) {
