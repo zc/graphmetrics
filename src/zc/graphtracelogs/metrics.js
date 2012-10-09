@@ -714,6 +714,7 @@ dojo.addOnLoad(function() {
     };
 
     var button_div = dojo.create('div',{}, dojo.body());
+    dojo.create('div', {innerHTML: 'getting data info ...'}, button_div);
     var save_dialog = new dijit.Dialog({
         title: 'Save as:',
         style: 'width: 20em'
@@ -790,7 +791,6 @@ dojo.addOnLoad(function() {
                 params.imgid = data.imgids[i];
                 new Chart(params);
             }
-            // dojo.destroy(button_div.firstChild);
         },
         error: function (error) {alert(error)}
     });
@@ -808,6 +808,7 @@ dojo.addOnLoad(function() {
                       }
             });
 
+            dojo.destroy(button_div.firstChild);
             button_div.appendChild(new dijit.form.Button({
                 label: "+",
                 onClick: function () {
