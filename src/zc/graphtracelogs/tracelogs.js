@@ -51,6 +51,7 @@ dojo.addOnLoad(function() {
             params.generation = (params.generation || 0) + 1;
             update(ob);
         };
+        this.changed = changed;
 
         this.refresh = function () {
             if (! params.end && ! params.end_time)
@@ -107,11 +108,18 @@ dojo.addOnLoad(function() {
             label: 'Apply this scaling to all charts'
         });
 
-        // Select data to show
-        div.appendChild(newInstanceMenuButton(
-            "Instance:",
-            function(val){ changed({instance: val}); }
-        ).domNode);
+        if (!customers.length) {
+            this.instance_menu_container = dojo.create('span', null, div);
+        }
+        else {
+            div.appendChild(
+                newInstanceMenuButton(
+                    "Instance:",
+                    function(val){
+                        changed({instance: val});
+                    }
+                ).domNode);
+        }
 
         zc.util.TextUI(div, 'Height', params, 'height', changed, 4, "[0-9]+");
 
@@ -192,7 +200,7 @@ dojo.addOnLoad(function() {
             style: 'width: 20em'
         });
         var save_name;
-        save_dialog.containerNode.appendChild(Tw
+        save_dialog.containerNode.appendChild(
             new dijit.form.ValidationTextBox({
                 regExp: "[0-9a-zA-z_.-]+",
                 onChange: function (val) { save_name = val; }
@@ -245,7 +253,9 @@ dojo.addOnLoad(function() {
                     new Chart(params);
                 }
             },
-            error: function (error) {alert(error)}
+            error: function (error) {
+                alert(error);
+            }
         });
         dojo.xhrGet({
             url: 'get_instances.json',
@@ -263,6 +273,20 @@ dojo.addOnLoad(function() {
                     onClick: function () { save_dialog.show(); }
                 }).domNode);
                 button_div.appendChild(savedMenuButton(data.saved).domNode);
+                for (i in charts) {
+                    (function (i) {
+                        var chart = charts[i];
+                        if (chart.instance_menu_container) {
+                            chart.instance_menu_container.appendChild(
+                                newInstanceMenuButton(
+                                    "Instance:",
+                                    function(val){
+                                        chart.changed({instance: val});
+                                    }
+                                ).domNode);
+                        }
+                    })(i);
+                }
             },
             error: function (error) {alert(error); }
         });

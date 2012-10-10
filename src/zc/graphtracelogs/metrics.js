@@ -166,48 +166,48 @@ dojo.addOnLoad(function() {
                     width: '100%'
                 }]
             });
-            border.addChild(
-                new dijit.layout.ContentPane({
-                    content: grid,
-                    style: 'width: 100%',
-                    region:  'center'
-                })
-            );
+            border.addChild(new dijit.layout.ContentPane({
+                content: grid,
+                style: 'width: 100%',
+                region:  'center'
+            }));
             border.addChild(newContentPane({
                 style: 'height: 23ex; width: 100%',
                 region: 'bottom'
             }, function (node) {
 
                 var div = dojo.place(
-                    '<div style="padding: 1em; width=100%">'
-                    +'Aggregation function:<br /></div>',
+                    '<div style="padding: 1em; width=100%">'+
+                    'Aggregation function:<br /></div>',
                     node);
 
                 div.appendChild(
                     (radio_buttons['average'] = new dijit.form.RadioButton({
                         checked: true,
                         id: 'average-aggretaion-radio-button',
-                        onClick: function () {aggregation_function='average'; },
+                        onClick: function () {
+                            aggregation_function='average';
+                        },
                         name: 'function'
                     })).domNode);
-                dojo.place('<label for="average-aggretaion-radio-button">'
-                           +'Average       </label>', div);
+                dojo.place('<label for="average-aggretaion-radio-button">'+
+                           'Average       </label>', div);
                 div.appendChild(
                     (radio_buttons['total'] = new dijit.form.RadioButton({
                         id: 'total-aggretaion-radio-button',
                         onClick: function () {aggregation_function='total'; },
                         name: 'function'
                     })).domNode);
-                dojo.place('<label for="total-aggretaion-radio-button">'
-                           +'Total</label><br />', div);
+                dojo.place('<label for="total-aggretaion-radio-button">'+
+                           'Total</label><br />', div);
                 div.appendChild(
                     (radio_buttons['custom'] = new dijit.form.RadioButton({
                         id: 'custom-aggretaion-radio-button',
                         onClick: function () {aggregation_function='custom'; },
                         name: 'function'
                     })).domNode);
-                dojo.place('<label for="custom-aggretaion-radio-button">'
-                           +'Custom (RRD RPN):</label></br>', div);
+                dojo.place('<label for="custom-aggretaion-radio-button">'+
+                           'Custom (RRD RPN):</label></br>', div);
                 custom_text = new dijit.form.ValidationTextBox({
                         style: 'width: 100%'
                 });
@@ -233,17 +233,13 @@ dojo.addOnLoad(function() {
                                     dojo.map(items, function (item) {
                                         return store.getValue(
                                             item, 'id');
-                                    }).join(',')
-                                    +
-                                        ',,'+aggregation_function
-                                    +
+                                    }).join(',')+
+                                        ',,'+aggregation_function+
                                         ','+dojo.map(items, function (item) {
                                             return store.getValue(
                                                 item, 'vname');
-                                        }).join(',')
-                                    +
-                                        ',,'+custom_text.get('value')
-                                );
+                                        }).join(',')+
+                                        ',,'+custom_text.get('value'));
                                 dialog.hide();
                             }
                         });
@@ -281,8 +277,8 @@ dojo.addOnLoad(function() {
                 custom_text.set('value', state[2]);
                 return;
             }
-            for (var i=0; i < series.length; i++)
-                store.newItem({id: series[i], vname: 'v'+i});
+            for (var j=0; j < series.length; j++)
+                store.newItem({id: series[j], vname: 'v'+j});
 
             if (state.length == 2) {
                 zc.util.assert(
@@ -493,11 +489,9 @@ dojo.addOnLoad(function() {
                                 color: default_colors[
                                     items.length % default_colors.length],
                                 dash: !!(Math.floor(items.length /
-                                                 default_colors.length
-                                                   ) % 2),
+                                    default_colors.length) % 2),
                                 thick: !!(Math.floor(items.length /
-                                                  (default_colors.length*2)
-                                                    ) % 2),
+                                    (default_colors.length*2)) % 2),
                                 tick: false,
                                 data: v
                             });
@@ -565,13 +559,13 @@ dojo.addOnLoad(function() {
             params = {};
 
         // now update
-        for (var i=0; i < data.length; i++) {
-            params['legend'+i] = data[i].legend;
-            params['color'+i] = data[i].color.slice(1);
-            params['data'+i] = data[i].data;
-            params['dash'+i] = data[i].dash ? 't' : '';
-            params['thick'+i] = data[i].thick ? 't' : '';
-            params['tick'+i] = data[i].tick ? 't' : '';
+        for (var j=0; j < data.length; j++) {
+            params['legend'+j] = data[j].legend;
+            params['color'+j] = data[j].color.slice(1);
+            params['data'+j] = data[j].data;
+            params['dash'+j] = data[j].dash ? 't' : '';
+            params['thick'+j] = data[j].thick ? 't' : '';
+            params['tick'+j] = data[j].tick ? 't' : '';
         }
         return params;
     };
@@ -792,7 +786,9 @@ dojo.addOnLoad(function() {
                 new Chart(params);
             }
         },
-        error: function (error) {alert(error)}
+        error: function (error) {
+            alert(error);
+        }
     });
 
     dojo.xhrGet({
