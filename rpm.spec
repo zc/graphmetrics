@@ -25,7 +25,7 @@ AutoReqProv: no
 %{summary}
 
 %prep
-%setup -T -D -n %{source}
+%setup -n %{source}
 
 %build
 %{python} install.py bootstrap
