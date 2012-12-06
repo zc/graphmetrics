@@ -34,7 +34,6 @@ AutoReqProv: no
 # Gaaaa! buildout doesn't handle relative paths in egg links. :(
 sed -i s-/tmp/%{name}-- \
    %{buildroot}/opt/%{name}/develop-eggs/zc.%{name}.egg-link 
-%clean
 
 for dir in eggs
 do
