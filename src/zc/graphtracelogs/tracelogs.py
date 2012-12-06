@@ -28,9 +28,12 @@ def config(config):
     global rrd_dir, get_pools
     rrd_dir = config['rrd']
     if 'pool_info' in config:
-        pool_addr = config['pool_info'].split(':')
-        pool_addr = pool_addr[0], int(pool_addr[1])
-        get_pools = lambda : pool.get_pools(pool_addr)
+        if config['pool_info']:
+            pool_addr = config['pool_info'].split(':')
+            pool_addr = pool_addr[0], int(pool_addr[1])
+            get_pools = lambda : pool.get_pools(pool_addr)
+        else:
+            get_pools = lambda : []
     else:
         get_pools = pool.get_pools
 
