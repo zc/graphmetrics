@@ -44,7 +44,7 @@ def test_suite():
     return unittest.TestSuite((
         manuel.testing.TestSuite(
             manuel.doctest.Manuel() + manuel.capture.Manuel(),
-            'collectmetrics.test',
+            'collectmetrics.test', 'zkdeployment.test',
             setUp=setUp, tearDown=setupstack.tearDown,
             ),
         ))

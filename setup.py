@@ -23,6 +23,8 @@ entry_points = """
 [console_scripts]
 collect_tracelogs = zc.graphtracelogs.collecttracelogs:main
 collect_metrics = zc.graphtracelogs.collectmetrics:main
+[zc.buildout]
+default = zc.graphtracelogs.zkdeployment:Recipe
 """
 
 setup(
@@ -37,7 +39,8 @@ setup(
     packages = find_packages('src'),
     namespace_packages = name.split('.')[:1],
     package_dir = {'': 'src'},
-    install_requires = ['setuptools', 'py-rrdtool', 'pytz', 'zc.ngi'],
+    install_requires = [
+        'setuptools', 'py-rrdtool', 'pytz', 'zc.metarecipe', 'zc.ngi'],
     extras_require=dict(test=['manuel', 'zope.testing']),
     zip_safe = False,
     entry_points=entry_points,
