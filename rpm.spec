@@ -25,15 +25,16 @@ AutoReqProv: no
 %{summary}
 
 %prep
-%setup -n %{source}
+%setup -T -D -n %{source}
 
 %build
 %{python} install.py bootstrap
 %{python} install.py buildout:extensions=
 
-# Gaaaa! buildout doesn't handle relative paths in egg links. :(
-sed -i s-/tmp/%{name}-- \
-   %{buildroot}/opt/%{name}/develop-eggs/zc.%{name}.egg-link 
+echo '%{_prefix}/%{name}/src
+../
+' > develop-eggs/zc.%{name}.egg-link
+
 
 for dir in eggs
 do
