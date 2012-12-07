@@ -93,7 +93,7 @@ class Recipe(zc.metarecipe.Recipe):
            <runner>
               transcript ${deployment:log-directory}/web.log
            </runner>
-        start-test-program nc -z localhost 8081
+        start-test-program = nc -z localhost 8081
         """)
 
         self.parse("""
