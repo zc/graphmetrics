@@ -99,7 +99,7 @@ class Recipe(zc.metarecipe.Recipe):
         [rc]
         recipe = zc.recipe.rhrc
         deployment = deployment
-        parts = web
+        parts = web collect
         chkconfig = 345 99 10
         process-management = true
         """)
