@@ -62,7 +62,7 @@ class Recipe(zc.metarecipe.Recipe):
           ${:s}
           ${:s}[filter:reload]
           ${:s}use = egg:bobo#reload
-          ${:s}modules = zc.graphtracelogs.metrics
+          ${:s}modules = zc.graphtracelogs.tracelogs
           ${:s}filter-with = zodb
           ${:s}
           ${:s}[filter:zodb]
