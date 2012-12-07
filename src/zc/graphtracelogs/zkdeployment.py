@@ -93,13 +93,23 @@ class Recipe(zc.metarecipe.Recipe):
            <runner>
               transcript ${deployment:log-directory}/web.log
            </runner>
+        start-test-program nc -z localhost 8081
         """)
 
         self.parse("""
-        [rc]
+        [rcweb]
         recipe = zc.recipe.rhrc
         deployment = deployment
-        parts = web collect
+        parts = web
+        chkconfig = 345 99 10
+        process-management = true
+        """)
+
+        self.parse("""
+        [rccollect]
+        recipe = zc.recipe.rhrc
+        deployment = deployment
+        parts = collect
         chkconfig = 345 99 10
         process-management = true
         """)
