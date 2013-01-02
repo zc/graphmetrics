@@ -179,7 +179,7 @@ class Instance(dict):
     def update(self, newminute):
         ts = minute2ts(self.minute)+60
         if ts > self.rrd_last:
-            if self.secondsn:
+            if self.secondsn and self.seconds:
                 self.rrd.update(
                     rrdtool.Val(self.requests, self.errors, self.waiting,
                                 self.secondsn*60/self.seconds,
