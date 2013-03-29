@@ -11,7 +11,7 @@ BuildRequires: cleanpython26 rrdtool-devel
 ##########################################################################
 # Lines below this point normally shouldn't change
 
-%define source %{name}-%{version}-%{release}
+%define source %{name}-%{version}
 
 Vendor: Zope Corporation
 Packager: Zope Corporation <sales@zope.com>
