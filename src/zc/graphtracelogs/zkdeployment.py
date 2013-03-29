@@ -7,6 +7,12 @@ class Recipe(zc.metarecipe.Recipe):
     def __init__(self, buildout, name, options):
         super(Recipe, self).__init__(buildout, name, options)
         assert name.endswith('.0'), name # There can be only one.
+
+        zk = zc.zk.ZK('zookeeper:2181')
+
+        zk_options = zk.properties(
+            '/' + name.replace(',', '/').rsplit('.', 1)[0])
+
         self['deployment'] = dict(
             recipe = 'zc.recipe.deployment',
             name=name,
@@ -48,6 +54,7 @@ class Recipe(zc.metarecipe.Recipe):
           ${:s}
           ${:s}rrd = ${collect:rrdpath}
           ${:s}pool_info =
+          ${:s}url = %(url)s
           ${:s}
           ${:s}filter-with = reload
           ${:s}
@@ -63,6 +70,20 @@ class Recipe(zc.metarecipe.Recipe):
           ${:s}[filter:reload]
           ${:s}use = egg:bobo#reload
           ${:s}modules = zc.graphtracelogs.tracelogs
+          ${:s}          zc.graphtracelogs.auth
+          ${:s}
+          ${:s}filter-with = translogger
+          ${:s}
+          ${:s}[filter:translogger]
+          ${:s}use = egg:paste#translogger
+          ${:s}logger_name = access
+          ${:s}
+          ${:s}filter-with = browserid
+          ${:s}
+          ${:s}[filter:browserid]
+          ${:s}use = egg:zc.wsgisessions
+          ${:s}db-name =
+          ${:s}
           ${:s}filter-with = zodb
           ${:s}
           ${:s}[filter:zodb]
@@ -82,7 +103,7 @@ class Recipe(zc.metarecipe.Recipe):
           ${:s}use = egg:Paste#http
           ${:s}host = 0.0.0.0
           ${:s}port = 8081
-        """)
+        """ % dict(url = str(zk_options['url'])))
 
         self.parse("""
         [web]

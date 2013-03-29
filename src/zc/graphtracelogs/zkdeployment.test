@@ -5,9 +5,9 @@
     ...     dist, 'zc.buildout', 'default')
 
     >>> from zc.metarecipe.testing import Buildout
-    >>> recipe = Recipe(Buildout(), 'example,app,main.0', {})
+    >>> recipe = Recipe(Buildout(), 'zmh,metrics.0', {})
     [deployment]
-    name = example,app,main.0
+    name = zmh,metrics.0
     recipe = zc.recipe.deployment
     user = zope
     [rrd]
@@ -35,6 +35,7 @@
       ${:s}
       ${:s}rrd = ${collect:rrdpath}
       ${:s}pool_info =
+      ${:s}url = http://metrics.nova.aws.zope.net
       ${:s}
       ${:s}filter-with = reload
       ${:s}
@@ -50,6 +51,20 @@
       ${:s}[filter:reload]
       ${:s}use = egg:bobo#reload
       ${:s}modules = zc.graphtracelogs.tracelogs
+      ${:s}          zc.graphtracelogs.auth
+      ${:s}
+      ${:s}filter-with = translogger
+      ${:s}
+      ${:s}[filter:translogger]
+      ${:s}use = egg:paste#translogger
+      ${:s}logger_name = access
+      ${:s}
+      ${:s}filter-with = browserid
+      ${:s}
+      ${:s}[filter:browserid]
+      ${:s}use = egg:zc.wsgisessions
+      ${:s}db-name =
+      ${:s}
       ${:s}filter-with = zodb
       ${:s}
       ${:s}[filter:zodb]

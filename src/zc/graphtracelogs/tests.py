@@ -18,10 +18,18 @@ import manuel.doctest
 import manuel.testing
 import sys
 import unittest
+import zc.zk.testing
 
+
+initial_tree = """
+/zmh
+  /metrics
+    url = 'http://metrics.nova.aws.zope.net'
+"""
 
 def setUp(test):
     setupstack.setUpDirectory(test)
+    zc.zk.testing.setUp(test, initial_tree, connection_string='zookeeper:2181')
 
 
     def setupLogging():
