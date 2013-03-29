@@ -52,7 +52,7 @@ setup(
         'zc.recipe.rhrc',
         'zc.wsgisessions',
         'zc.zdaemonrecipe',
-        'zc.zk',
+        'zc.zk [static]',
         ],
     extras_require=dict(test=['manuel', 'zope.testing', 'zc.zk [test]']),
     zip_safe = False,
