@@ -1,6 +1,7 @@
 import hashlib
 import os
 import zc.metarecipe
+import zc.zk
 
 class Recipe(zc.metarecipe.Recipe):
 
