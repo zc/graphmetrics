@@ -40,7 +40,8 @@ setup(
     namespace_packages = name.split('.')[:1],
     package_dir = {'': 'src'},
     install_requires = [
-        'setuptools', 'py-rrdtool', 'pytz', 'zc.metarecipe', 'zc.ngi'],
+        'setuptools', 'py-rrdtool', 'pytz', 'zc.metarecipe', 'zc.ngi',
+        'zc.wsgisessions', 'requests'],
     extras_require=dict(test=['manuel', 'zope.testing']),
     zip_safe = False,
     entry_points=entry_points,

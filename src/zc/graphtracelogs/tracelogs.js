@@ -192,6 +192,13 @@ dojo.addOnLoad(function() {
     };
 
     dojo.addOnLoad(function() {
+
+        dojo.body().appendChild(new dijit.form.Button({
+           label: 'Logout',
+           style: "float: right",
+           onClick: function () { navigator.id.logout(); }
+        }).domNode);
+
         var button_div = dojo.create('div',{}, dojo.body());
         dojo.create('div',
                     {innerHTML: 'Getting tracelog info ...'}, button_div);
