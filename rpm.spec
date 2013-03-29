@@ -3,7 +3,7 @@
 %define source %{name}-%{version}
 
 Name: graphtracelogs
-Version: 0.7.0
+Version: 0
 Release: 1
 
 Summary: Trace-log graphing
