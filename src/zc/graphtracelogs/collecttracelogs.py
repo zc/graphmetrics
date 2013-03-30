@@ -108,7 +108,10 @@ class Instance(dict):
     def __setstate__(self, v):
         self.__dict__.clear()
         self.__dict__.update(v)
-        self.rrd_last = self.rrd.last()
+        try:
+            self.rrd_last = self.rrd.last()
+        except OSError:
+            self.rrd_last = None        # File got cleaned up
 
     def reset(self):
         self.clear()
@@ -250,6 +253,10 @@ def main(args=None):
                 f = open(log_path)
             process_file(f, state)
             open(endstate_name, 'w').write(cPickle.dumps(state))
+
+    # Remme instances who's rrd files were removed.
+    state = dict((name, inst) for (name, inst) in state.items()
+                 if inst.rrd_last is not None)
 
     log_name, = logs
     while 1:
