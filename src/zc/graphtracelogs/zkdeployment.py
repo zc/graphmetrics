@@ -1,5 +1,6 @@
 import hashlib
 import os
+import pprint
 import zc.metarecipe
 import zc.zk
 
@@ -51,7 +52,9 @@ class Recipe(zc.metarecipe.Recipe):
           ${:s}[app:main]
           ${:s}use = egg:bobo
           ${:s}bobo_configure = zc.graphtracelogs.tracelogs:config
+          ${:s}                 zc.graphtracelogs.auth:config
           ${:s}bobo_resources = zc.graphtracelogs.tracelogs
+          ${:s}                 zc.graphtracelogs.auth
           ${:s}
           ${:s}rrd = ${collect:rrdpath}
           ${:s}pool_info =
@@ -127,7 +130,8 @@ class Recipe(zc.metarecipe.Recipe):
         parts = web
         chkconfig = 345 99 10
         process-management = true
-        """)
+        digest = %s
+        """ % hashlib.sha224(pprint.pformat(dict(zk_options))).hexdigest())
 
         self.parse("""
         [rccollect]

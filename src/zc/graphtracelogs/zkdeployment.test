@@ -31,7 +31,9 @@
     text = ${:s}[app:main]
       ${:s}use = egg:bobo
       ${:s}bobo_configure = zc.graphtracelogs.tracelogs:config
+      ${:s}                 zc.graphtracelogs.auth:config
       ${:s}bobo_resources = zc.graphtracelogs.tracelogs
+      ${:s}                 zc.graphtracelogs.auth
       ${:s}
       ${:s}rrd = ${collect:rrdpath}
       ${:s}pool_info =
@@ -97,6 +99,7 @@
     [rcweb]
     chkconfig = 345 99 10
     deployment = deployment
+    digest = 98bbe9cf07c94c250d760e8e6f452e1c755592fa4fb6600b629cb65e
     parts = web
     process-management = true
     recipe = zc.recipe.rhrc
