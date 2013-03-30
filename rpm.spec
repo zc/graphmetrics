@@ -1,5 +1,5 @@
 Name: graphtracelogs
-Version: 0.7.4
+Version: 0
 Release: 1
 
 Summary: Trace-log graphing
