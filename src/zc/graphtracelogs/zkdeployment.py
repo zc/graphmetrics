@@ -97,6 +97,8 @@ class Recipe(zc.metarecipe.Recipe):
           ${:s}     </filestorage>
           ${:s}  </zodb>
           ${:s}
+          ${:s}initializer = zc.graphtracelogs.auth:db_init
+          ${:s}
           ${:s}[filter:debug]
           ${:s}use = egg:bobo#debug
           ${:s}
