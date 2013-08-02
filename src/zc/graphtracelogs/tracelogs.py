@@ -3,6 +3,8 @@ import bobo
 import boboserver
 import collections
 import datetime
+import hashlib
+import hmac
 import json
 import logging
 import os
@@ -16,6 +18,9 @@ import socket
 import sys
 import tempfile
 import time
+import urllib
+import urllib2
+
 import zope.component
 
 import zc.graphtracelogs.auth
@@ -77,6 +82,15 @@ def rrdname(instance):
     instance += '.rrd'
     assert inst_rrd(instance)
     return instance
+
+@bobo.query("/shorten")
+def shorten(url):
+    hash = hmac.new("tads591'Mekong", url, hashlib.sha1).hexdigest()
+    f = urllib2.urlopen("http://zo.pe/shorten?url=%s&hash=%s" %
+                        (urllib.quote(url), hash))
+    r = json.loads(f.read())['url']
+    f.close()
+    return r
 
 @bobo.subroute('/:user/:name', scan=True)
 class App:
