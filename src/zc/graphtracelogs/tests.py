@@ -25,6 +25,7 @@ initial_tree = """
 /zmh
   /metrics
     url = 'http://metrics.nova.aws.zope.net'
+    zim = 'samanage4.zmh.zope.net:5556'
 """
 
 def setUp(test):

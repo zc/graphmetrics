@@ -104,7 +104,7 @@
       ${:s}port = 8081
     [rc]
     < = rcbase
-    digest = 98bbe9cf07c94c250d760e8e6f452e1c755592fa4fb6600b629cb65e
+    digest = 6339dacd3f956a9cf9faa537168f2143ae38e21903c16b872358a8f3
     parts = web metrics
     [rcbase]
     chkconfig = 345 99 10

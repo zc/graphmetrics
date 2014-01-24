@@ -23,4 +23,5 @@ class Recipe(zc.metarecipe.Recipe):
                 digest = hashlib.sha224(
                     pprint.pformat(dict(zk_options))).hexdigest(),
                 url = str(zk_options['url']),
+                zim = str(zk_options['zim']),
                 ))
