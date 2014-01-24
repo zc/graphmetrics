@@ -6,23 +6,34 @@
 
     >>> from zc.metarecipe.testing import Buildout
     >>> recipe = Recipe(Buildout(), 'zmh,metrics.0', {})
-    [deployment]
-    name = zmh,metrics.0
-    recipe = zc.recipe.deployment
-    user = zope
-    [rrd]
-    group = zope
-    paths = /mnt/ephemeral0/rrds/tracelog
-    recipe = z3c.recipe.mkdir
-    user = zope
+    [buildout]
+    parts = rc rccollect
     [collect]
     deployment = deployment
-    logpath = /mnt/ephemeral0/logs/tracelogs/z4m
+    logpath = /home/databases/logs/tracelogs/z4m
     program = ${buildout:bin-directory}/collect_tracelogs ${:logpath} ${:rrdpath}
     recipe = zc.zdaemonrecipe
     rrdpath = ${rrd:paths}
     zdaemon.conf = <runner>
       transcript ${deployment:log-directory}/collect-tracelogs.log
+      </runner>
+    [deployment]
+    name = zmh,metrics.0
+    recipe = zc.recipe.deployment
+    user = zope
+    [metric-rrd]
+    group = zope
+    paths = /home/databases/rrds/metrics
+    recipe = z3c.recipe.mkdir
+    user = zope
+    [metrics]
+    addr = samanage4.zmh.zope.net:5556
+    deployment = deployment
+    program = ${buildout:bin-directory}/collect_metrics ${:rrdpath} ${:addr}
+    recipe = zc.zdaemonrecipe
+    rrdpath = ${metric-rrd:paths}
+    zdaemon.conf = <runner>
+      transcript ${deployment:log-directory}/collect-metrics.log
       </runner>
     [paste.ini]
     deployment = deployment
@@ -31,10 +42,13 @@
     text = ${:s}[app:main]
       ${:s}use = egg:bobo
       ${:s}bobo_configure = zc.graphtracelogs.tracelogs:config
+      ${:s}                 zc.graphtracelogs.metrics:config
       ${:s}                 zc.graphtracelogs.auth:config
-      ${:s}bobo_resources = zc.graphtracelogs.tracelogs
+      ${:s}bobo_resources = zc.graphtracelogs.metrics
+      ${:s}                 zc.graphtracelogs.tracelogs
       ${:s}                 zc.graphtracelogs.auth
       ${:s}
+      ${:s}metrics-rrd = ${metrics:rrdpath}
       ${:s}rrd = ${collect:rrdpath}
       ${:s}pool_info =
       ${:s}url = http://metrics.nova.aws.zope.net
@@ -53,6 +67,7 @@
       ${:s}[filter:reload]
       ${:s}use = egg:bobo#reload
       ${:s}modules = zc.graphtracelogs.tracelogs
+      ${:s}          zc.graphtracelogs.metrics
       ${:s}          zc.graphtracelogs.auth
       ${:s}
       ${:s}filter-with = translogger
@@ -71,7 +86,6 @@
       ${:s}
       ${:s}[filter:zodb]
       ${:s}use = egg:zc.zodbwsgi
-      ${:s}#filter-with = debug
       ${:s}configuration =
       ${:s}  <zodb>
       ${:s}     <filestorage>
@@ -88,27 +102,30 @@
       ${:s}use = egg:Paste#http
       ${:s}host = 0.0.0.0
       ${:s}port = 8081
+    [rc]
+    < = rcbase
+    digest = 98bbe9cf07c94c250d760e8e6f452e1c755592fa4fb6600b629cb65e
+    parts = web metrics
+    [rcbase]
+    chkconfig = 345 99 10
+    deployment = deployment
+    process-management = true
+    recipe = zc.recipe.rhrc
+    [rccollect]
+    < = rcbase
+    parts = collect
+    [rrd]
+    group = zope
+    paths = /home/databases/rrds/tracelog
+    recipe = z3c.recipe.mkdir
+    user = zope
     [web]
     deployment = deployment
     program = ${buildout:bin-directory}/paster serve ${paste.ini:location}
     recipe = zc.zdaemonrecipe
-    start-test-program = nc -z localhost 8081
     zdaemon.conf = <runner>
       transcript ${deployment:log-directory}/web.log
       </runner>
-    [rcweb]
-    chkconfig = 345 99 10
-    deployment = deployment
-    digest = 98bbe9cf07c94c250d760e8e6f452e1c755592fa4fb6600b629cb65e
-    parts = web
-    process-management = true
-    recipe = zc.recipe.rhrc
-    [rccollect]
-    chkconfig = 345 99 10
-    deployment = deployment
-    parts = collect
-    process-management = true
-    recipe = zc.recipe.rhrc
 
     >>> recipe.install()
     ()
