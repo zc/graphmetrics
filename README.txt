@@ -5,7 +5,9 @@ Title Here
 Changes
 *******
 
-0.1 (yyyy-mm-dd)
-================
+0.8.0 2014-01-26
+=================
 
-Initial release
+- Added zkdeployment & persona support for metrics.
+
+- Other minor tweaks.
