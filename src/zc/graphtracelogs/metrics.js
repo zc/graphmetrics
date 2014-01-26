@@ -63,7 +63,6 @@ dojo.addOnLoad(function() {
                 select.reset();
             }
         });
-        jimselect = select;
         node.appendChild(select.domNode);
         zc.util.tooltip(select.domNode,
                         'regular expression (spaces converted to .*)');
@@ -124,6 +123,9 @@ dojo.addOnLoad(function() {
 
         };
 
+        var AGGREGATE_DELIMITER = '|';
+        var AGGREGATE_DELIMITER2 = '||';
+
         var build_dialog = function () {
             var border = new dijit.layout.BorderContainer({
                 gutters: false,
@@ -132,7 +134,7 @@ dojo.addOnLoad(function() {
             dialog = new dijit.Dialog({
                 title:
                 'Select one (or more agregated) series to define a plot data.',
-                style: 'width: 640px; height: 450px',
+                style: 'width: 960px; height: 450px',
                 content: border
             });
             store = new dojo.data.ItemFileWriteStore({
@@ -233,13 +235,16 @@ dojo.addOnLoad(function() {
                                     dojo.map(items, function (item) {
                                         return store.getValue(
                                             item, 'id');
-                                    }).join(',')+
-                                        ',,'+aggregation_function+
-                                        ','+dojo.map(items, function (item) {
+                                    }).join(AGGREGATE_DELIMITER) +
+                                        AGGREGATE_DELIMITER2 +
+                                        aggregation_function +
+                                        AGGREGATE_DELIMITER +
+                                        dojo.map(items, function (item) {
                                             return store.getValue(
                                                 item, 'vname');
-                                        }).join(',')+
-                                        ',,'+custom_text.get('value'));
+                                        }).join(AGGREGATE_DELIMITER) +
+                                        AGGREGATE_DELIMITER2 +
+                                        custom_text.get('value'));
                                 dialog.hide();
                             }
                         });
@@ -262,10 +267,10 @@ dojo.addOnLoad(function() {
 
         var update_store = function (state) {
             var raw = state;
-            state = state.split(',,');
-            var series = state[0].split(',');
+            state = state.split(AGGREGATE_DELIMITER2);
+            var series = state[0].split(AGGREGATE_DELIMITER);
             if (state.length == 3) {
-                var vnames = state[1].split(',');
+                var vnames = state[1].split(AGGREGATE_DELIMITER);
                 zc.util.assert(
                     vnames.length == series.length + 1,
                     "Wrong number of vnames "+raw);
@@ -316,7 +321,7 @@ dojo.addOnLoad(function() {
             });
             dialog = new dijit.Dialog({
                 title: 'Plots for this chart',
-                style: 'width: 800px; height: 400px',
+                style: 'width: 80%; height: 70%',
                 autofocus: false,
                 content: border
             });
@@ -625,7 +630,7 @@ dojo.addOnLoad(function() {
         dojo.create('br', {}, div);
         div.appendChild(new dijit.form.Button({
             label: 'Reload',
-            onClick: update
+            onClick: function () { update(); }
         }).domNode);
 
         var uis = [];

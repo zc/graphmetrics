@@ -223,7 +223,7 @@ class App:
         lines = []
         for n, plot in sorted(plots.iteritems()):
             series = plot['data']
-            if ',' in series:
+            if AGGREGATE_DELIMITER in series:
                 rpn = aggregate(lines, n, series)
                 if not rpn:
                     continue
@@ -361,13 +361,28 @@ class App:
 
         return json.dumps(dict(url='../../%s/%s' % (me, name)))
 
+# Aggregatiions
+#
+# Of the form:
+#
+# AGGREGATIION = SNAMES AGGREGATE_DELIMITER2
+#                TYPE AGGREGATE_DELIMITER VNAMES
+#                AGGREGATE_DELIMITER2 EXPR
+#
+# SNAMES = SNAME (AGGREGATE_DELIMITER SNAME)*
+# TYPE = average | total | custom
+# VNAMES = VNAME (AGGREGATE_DELIMITER VNAME)*
+# EXPR = VNAMEOROP (, VNAMEOROP)*
+# VNAMEOROP = VNAME | OP
 
+AGGREGATE_DELIMITER = '|'
+AGGREGATE_DELIMITER2 = '||'
 def aggregate(lines, basevar, data):
     basevar = 'v%s' % basevar
-    data = data.split(',,')
+    data = data.split(AGGREGATE_DELIMITER2)
     n = 0
     names = []
-    for s in data.pop(0).split(','):
+    for s in data.pop(0).split(AGGREGATE_DELIMITER):
         rrd_path, data_source = rrd_id(s)
         name = "%s_%s" % (basevar, n)
         names.append(name)
@@ -378,18 +393,18 @@ def aggregate(lines, basevar, data):
     if not n:
         return ''
 
-    if not data or data[0].split(',')[0] == 'average':
+    if not data or data[0].split(AGGREGATE_DELIMITER)[0] == 'average':
         # average
         return ','.join(names)+',%s,AVG' % n
-    elif data[0].split(',')[0] == 'total':
+    elif data[0].split(AGGREGATE_DELIMITER)[0] == 'total':
         if n == 1:
             return names[0]
         return ','.join(names)+(',ADDNAN'*(n-1))
 
     assert len(data) > 1, data
     anames = {}
-    assert data[0].startswith('custom,'), `data`
-    for i, name in enumerate(data.pop(0).split(',')[1:]):
+    assert data[0].startswith('custom'+AGGREGATE_DELIMITER), `data`
+    for i, name in enumerate(data.pop(0).split(AGGREGATE_DELIMITER)[1:]):
         anames[name] = names[i]
     return ','.join(
         ','.join(anames.get(e, e)
