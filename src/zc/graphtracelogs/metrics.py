@@ -12,6 +12,9 @@ import rrdtool
 import sys
 import tempfile
 import time
+import zc.graphtracelogs.auth
+
+from zc.graphtracelogs.auth import who
 
 dojoroot = 'http://ajax.googleapis.com/ajax/libs/dojo/1.5'
 
@@ -31,12 +34,6 @@ def config(config):
     rrd_updated = os.path.join(rrd_dir, '.updated')
     tracelog_rrd_dir = config['rrd']
     tracelog_updated = os.path.join(tracelog_rrd_dir, '.updated')
-
-def who(request):
-    if 'HTTP_AUTHORIZATION' in request.environ:
-        return request.environ['HTTP_AUTHORIZATION'
-                               ].split()[1].decode('base64').split(':')[0]
-    return 'anon'
 
 def rrd_id(series):
     m = inst_tracelog_series(series)
@@ -85,11 +82,11 @@ def get_series_data():
     return series
 
 
-@bobo.resource('/metrics')
+@bobo.resource('/metrics', check=zc.graphtracelogs.auth.checker)
 def home(request):
     return bobo.redirect(request.url+'/%s/default/' % who(request))
 
-@bobo.resource('/metrics/')
+@bobo.resource('/metrics/', check=zc.graphtracelogs.auth.checker)
 def home_(request):
     return bobo.redirect(request.url+'%s/default/' % who(request))
 
@@ -112,7 +109,7 @@ class App:
     def base(self):
         return bobo.redirect(self.request.url+'/')
 
-    @bobo.query('/')
+    @bobo.query('/', check=zc.graphtracelogs.auth.checker)
     def index(self):
         # if self.user == 'jim':
         #     return """
@@ -155,7 +152,8 @@ class App:
 
     definitions = property(get_definitions)
 
-    @bobo.query(content_type='application/json')
+    @bobo.query(content_type='application/json',
+                check=zc.graphtracelogs.auth.checker)
     def load(self):
         defs = self.definitions.get(self.name)
         if defs is None:
@@ -168,14 +166,16 @@ class App:
                 )
         return json.dumps(result)
 
-    @bobo.query(content_type='application/json')
+    @bobo.query(content_type='application/json',
+                check=zc.graphtracelogs.auth.checker)
     def get_series(self):
         return json.dumps(dict(
             series=get_series_data(),
             saved=list(self.get_definitions(who(self.request))),
             ))
 
-    @bobo.query('/show.png', content_type='image/png')
+    @bobo.query('/show.png', content_type='image/png',
+                check=zc.graphtracelogs.auth.checker)
     def show(self, bobo_request, imgid, generation=0,
              start=None, end=None, start_time=None, end_time=None,
              width=900, height=None, step=None, title='',
@@ -329,7 +329,7 @@ class App:
         os.remove(img_path)
         return result
 
-    @bobo.post('/destroy')
+    @bobo.post('/destroy', check=zc.graphtracelogs.auth.checker)
     def destroy(self, imgid):
         logging.info("%r destroy %r %r %r",
                      who(self.request), self.user, self.name, imgid)
@@ -345,7 +345,8 @@ class App:
                 return 'destroyed %r' % defs['charts']._p_oid
         return ''
 
-    @bobo.post(content_type='application/json')
+    @bobo.post(content_type='application/json',
+               check=zc.graphtracelogs.auth.checker)
     def save(self, name, overwrite=False):
         me = who(self.request)
         definitions = self.get_definitions(me)
