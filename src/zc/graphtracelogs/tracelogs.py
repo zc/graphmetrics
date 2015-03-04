@@ -32,7 +32,7 @@ dojoroot = 'http://ajax.googleapis.com/ajax/libs/dojo/1.8.3'
 inst_rrd = re.compile(r'\S+__\S+__\S+.rrd$').match
 numbered_instance = re.compile('instance(\d+)$').match
 portly_instance = re.compile('-(\d\d\d+)').search
-unportly_instance = re.compile('([a-z]+)\d+').match
+unportly_instance = re.compile('([-a-z]+)\d*').match
 
 def config(config):
     global rrd_dir, get_pools
