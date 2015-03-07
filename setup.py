@@ -11,7 +11,7 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
-name = 'zc.graphtracelogs'
+name = 'zc.graphmetrics'
 version = '0'
 description = """
 """
@@ -21,11 +21,11 @@ from setuptools import setup, find_packages
 
 entry_points = """
 [console_scripts]
-collect_tracelogs = zc.graphtracelogs.collecttracelogs:main
-collect_metrics = zc.graphtracelogs.collectmetrics:main
-collect_kinesis = zc.graphtracelogs.kinesis:main
+collect_tracelogs = zc.graphmetrics.collecttracelogs:main
+collect_metrics = zc.graphmetrics.collectmetrics:main
+collect_kinesis = zc.graphmetrics.kinesis:main
 [zc.buildout]
-default = zc.graphtracelogs.zkdeployment:Recipe
+default = zc.graphmetrics.zkdeployment:Recipe
 """
 
 setup(
