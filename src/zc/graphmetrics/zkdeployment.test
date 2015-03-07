@@ -1,13 +1,11 @@
     >>> import pkg_resources
     >>> dist = pkg_resources.working_set.find(
-    ...     pkg_resources.Requirement.parse('zc.graphtracelogs'))
+    ...     pkg_resources.Requirement.parse('zc.graphmetrics'))
     >>> Recipe = pkg_resources.load_entry_point(
     ...     dist, 'zc.buildout', 'default')
 
     >>> from zc.metarecipe.testing import Buildout
     >>> recipe = Recipe(Buildout(), 'zmh,metrics.0', {})
-    [buildout]
-    parts = rc rccollect
     [collect]
     deployment = deployment
     logpath = /home/databases/logs/tracelogs/z4m
@@ -21,6 +19,15 @@
     name = zmh,metrics.0
     recipe = zc.recipe.deployment
     user = zope
+    [kinesis]
+    deployment = deployment
+    program = ${buildout:bin-directory}/collect_kinesis ${:stream} ${:rrdpath}
+    recipe = zc.zdaemonrecipe
+    rrdpath = ${metric-rrd:paths}/cimaa
+    stream = cimaa.metrics
+    zdaemon.conf = <runner>
+      transcript ${deployment:log-directory}/collect-metrics.log
+      </runner>
     [metric-rrd]
     group = zope
     paths = /home/databases/rrds/metrics
@@ -41,12 +48,12 @@
     s = 
     text = ${:s}[app:main]
       ${:s}use = egg:bobo
-      ${:s}bobo_configure = zc.graphtracelogs.tracelogs:config
-      ${:s}                 zc.graphtracelogs.metrics:config
-      ${:s}                 zc.graphtracelogs.auth:config
-      ${:s}bobo_resources = zc.graphtracelogs.metrics
-      ${:s}                 zc.graphtracelogs.tracelogs
-      ${:s}                 zc.graphtracelogs.auth
+      ${:s}bobo_configure = zc.graphmetrics.tracelogs:config
+      ${:s}                 zc.graphmetrics.metrics:config
+      ${:s}                 zc.graphmetrics.auth:config
+      ${:s}bobo_resources = zc.graphmetrics.metrics
+      ${:s}                 zc.graphmetrics.tracelogs
+      ${:s}                 zc.graphmetrics.auth
       ${:s}
       ${:s}metrics-rrd = ${metrics:rrdpath}
       ${:s}rrd = ${collect:rrdpath}
@@ -66,9 +73,9 @@
       ${:s}
       ${:s}[filter:reload]
       ${:s}use = egg:bobo#reload
-      ${:s}modules = zc.graphtracelogs.tracelogs
-      ${:s}          zc.graphtracelogs.metrics
-      ${:s}          zc.graphtracelogs.auth
+      ${:s}modules = zc.graphmetrics.tracelogs
+      ${:s}          zc.graphmetrics.metrics
+      ${:s}          zc.graphmetrics.auth
       ${:s}
       ${:s}filter-with = translogger
       ${:s}
@@ -93,7 +100,7 @@
       ${:s}     </filestorage>
       ${:s}  </zodb>
       ${:s}
-      ${:s}initializer = zc.graphtracelogs.auth:db_init
+      ${:s}initializer = zc.graphmetrics.auth:db_init
       ${:s}
       ${:s}[filter:debug]
       ${:s}use = egg:bobo#debug
@@ -103,17 +110,12 @@
       ${:s}host = 0.0.0.0
       ${:s}port = 8081
     [rc]
-    < = rcbase
-    digest = 6339dacd3f956a9cf9faa537168f2143ae38e21903c16b872358a8f3
-    parts = web metrics
-    [rcbase]
     chkconfig = 345 99 10
     deployment = deployment
+    digest = 6339dacd3f956a9cf9faa537168f2143ae38e21903c16b872358a8f3
+    parts = web metrics collect kinesis
     process-management = true
     recipe = zc.recipe.rhrc
-    [rccollect]
-    < = rcbase
-    parts = collect
     [rrd]
     group = zope
     paths = /home/databases/rrds/tracelog
