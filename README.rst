@@ -54,7 +54,7 @@ a lot of flexibility for defining time-sries graphs, including
 leveraging RRD's reverse-polish expression syntax.  Graphs are
 automaticaly saved per user and user's can view each other's graphs.
 
-Use authentication is done with Persona.
+User authentication is done with Persona.
 
 Data are collected in RRD files.
 
