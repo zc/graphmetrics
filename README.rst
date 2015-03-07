@@ -12,7 +12,7 @@ There are 2 kinds of data that are graphed:
 Trace logs
   For many years, the Zope project has had trace logs.
 
-  The original pre-WSGI Zope server supported them as does do the
+  The original pre-WSGI Zope server supported them as do the
   zope.server and zc.resumelb WSGI servers.
 
   Tracelogs track basic events in a request lifetime, like request
@@ -31,6 +31,8 @@ Trace logs
 
   - error (500 response) rates.
 
+  .. image:: tracelog.png
+
 Generic metrics
   We also support generic metrics.
 
@@ -39,6 +41,8 @@ Generic metrics
   AWS Kinesis.  (OK, CIMAA is technically also an in-house monitoring
   framework, but we think it provides a lot of advantages and we plan
   to promote it as an open project when it's more mature.
+
+  .. image:: metrics.png
 
 The graphing UI was written when I didn't remember much Javascript or
 Dojo, so the code is rather discusting.  The thing is, it works welll
