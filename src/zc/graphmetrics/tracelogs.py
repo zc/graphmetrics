@@ -23,9 +23,9 @@ import urllib2
 
 import zope.component
 
-import zc.graphtracelogs.auth
+import zc.graphmetrics.auth
 
-from zc.graphtracelogs.auth import who
+from zc.graphmetrics.auth import who
 
 dojoroot = 'http://ajax.googleapis.com/ajax/libs/dojo/1.8.3'
 
@@ -47,8 +47,6 @@ def config(config):
     else:
         get_pools = pool.get_pools
 
-    zope.component.provideAdapter(zc.wsgisessions.sessions.get_session)
-
     if 'logging' in config:
         if not getattr(logging, 'been_configured', False):
             import ZConfig
@@ -69,7 +67,7 @@ nstyles = len(styles)
 
 
 
-@bobo.resource('/', check=zc.graphtracelogs.auth.checker)
+@bobo.resource('/', check=zc.graphmetrics.auth.checker)
 def home(request):
     return bobo.redirect('%s/default/' % who(request))
 
@@ -106,7 +104,7 @@ class App:
     def base(self):
         return bobo.redirect(self.request.url+'/')
 
-    @bobo.query('/', check=zc.graphtracelogs.auth.checker)
+    @bobo.query('/', check=zc.graphmetrics.auth.checker)
     def index(self):
         return index_html % ("%s/%s" % (self.user, self.name))
 
@@ -133,7 +131,7 @@ class App:
     definitions = property(get_definitions)
 
     @bobo.query(content_type='application/json',
-                check=zc.graphtracelogs.auth.checker)
+                check=zc.graphmetrics.auth.checker)
     def load(self):
         defs = self.definitions.get(self.name)
         if defs is None:
@@ -147,7 +145,7 @@ class App:
         return json.dumps(result)
 
     @bobo.query(content_type='application/json',
-                check=zc.graphtracelogs.auth.checker)
+                check=zc.graphmetrics.auth.checker)
     def get_instances(self):
         customers = {}
         by_addr = {}
@@ -256,7 +254,7 @@ class App:
             ))
 
     @bobo.query('/show.png', content_type='image/png',
-                check=zc.graphtracelogs.auth.checker)
+                check=zc.graphmetrics.auth.checker)
     def show(self, imgid, instance, generation=0,
              start=None, end=None, start_time=None, end_time=None,
              width=900, height=None, step=None,
@@ -465,7 +463,7 @@ class App:
         os.remove(img_path)
         return result
 
-    @bobo.post('/destroy', check=zc.graphtracelogs.auth.checker)
+    @bobo.post('/destroy', check=zc.graphmetrics.auth.checker)
     def destroy(self, imgid):
         logging.info("%r destroy %r %r %r",
                      who(self.request), self.user, self.name, imgid)
@@ -482,7 +480,7 @@ class App:
         return ''
 
     @bobo.post(content_type='application/json',
-               check=zc.graphtracelogs.auth.checker)
+               check=zc.graphmetrics.auth.checker)
     def save(self, name, overwrite=False):
         me = who(self.request)
         definitions = self.get_definitions(me)

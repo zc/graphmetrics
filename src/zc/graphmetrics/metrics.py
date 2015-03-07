@@ -12,9 +12,9 @@ import rrdtool
 import sys
 import tempfile
 import time
-import zc.graphtracelogs.auth
+import zc.graphmetrics.auth
 
-from zc.graphtracelogs.auth import who
+from zc.graphmetrics.auth import who
 
 dojoroot = 'http://ajax.googleapis.com/ajax/libs/dojo/1.5'
 
@@ -32,8 +32,9 @@ def config(config):
     global rrd_dir, rrd_updated, tracelog_rrd_dir, tracelog_updated
     rrd_dir = config['metrics-rrd']
     rrd_updated = os.path.join(rrd_dir, '.updated')
-    tracelog_rrd_dir = config['rrd']
-    tracelog_updated = os.path.join(tracelog_rrd_dir, '.updated')
+    tracelog_rrd_dir = config.get('rrd')
+    if tracelog_rrd_dir:
+        tracelog_updated = os.path.join(tracelog_rrd_dir, '.updated')
 
 def rrd_id(series):
     m = inst_tracelog_series(series)
@@ -68,25 +69,27 @@ def get_series_data():
                       )
 
     # trace logs
-    for inst in sorted(f[:-4] for f in os.listdir(tracelog_rrd_dir)
-                       if inst_tracelog_rrd(f)):
-        host, customer, inst_name = inst.split('__')
-        result.extend([
-            "%s/%s-z4m/%s/tracelog/%s" % (host, customer, inst_name, v)
-            for v in tracelog_vars
-            ])
+    if tracelog_rrd_dir:
+        for inst in sorted(f[:-4] for f in os.listdir(tracelog_rrd_dir)
+                           if inst_tracelog_rrd(f)):
+            host, customer, inst_name = inst.split('__')
+            result.extend([
+                "%s/%s-z4m/%s/tracelog/%s" % (host, customer, inst_name, v)
+                for v in tracelog_vars
+                ])
+        if os.path.exists(tracelog_updated):
+            tracelog_update = os.stat(tracelog_updated).st_mtime
 
     series = sorted(result)
     series_update = os.stat(rrd_updated).st_mtime
-    tracelog_update = os.stat(tracelog_updated).st_mtime
     return series
 
 
-@bobo.resource('/metrics', check=zc.graphtracelogs.auth.checker)
+@bobo.resource('/metrics', check=zc.graphmetrics.auth.checker)
 def home(request):
     return bobo.redirect(request.url+'/%s/default/' % who(request))
 
-@bobo.resource('/metrics/', check=zc.graphtracelogs.auth.checker)
+@bobo.resource('/metrics/', check=zc.graphmetrics.auth.checker)
 def home_(request):
     return bobo.redirect(request.url+'%s/default/' % who(request))
 
@@ -109,7 +112,7 @@ class App:
     def base(self):
         return bobo.redirect(self.request.url+'/')
 
-    @bobo.query('/', check=zc.graphtracelogs.auth.checker)
+    @bobo.query('/', check=zc.graphmetrics.auth.checker)
     def index(self):
         # if self.user == 'jim':
         #     return """
@@ -153,7 +156,7 @@ class App:
     definitions = property(get_definitions)
 
     @bobo.query(content_type='application/json',
-                check=zc.graphtracelogs.auth.checker)
+                check=zc.graphmetrics.auth.checker)
     def load(self):
         defs = self.definitions.get(self.name)
         if defs is None:
@@ -167,7 +170,7 @@ class App:
         return json.dumps(result)
 
     @bobo.query(content_type='application/json',
-                check=zc.graphtracelogs.auth.checker)
+                check=zc.graphmetrics.auth.checker)
     def get_series(self):
         return json.dumps(dict(
             series=get_series_data(),
@@ -175,7 +178,7 @@ class App:
             ))
 
     @bobo.query('/show.png', content_type='image/png',
-                check=zc.graphtracelogs.auth.checker)
+                check=zc.graphmetrics.auth.checker)
     def show(self, bobo_request, imgid, generation=0,
              start=None, end=None, start_time=None, end_time=None,
              width=900, height=None, step=None, title='',
@@ -329,7 +332,7 @@ class App:
         os.remove(img_path)
         return result
 
-    @bobo.post('/destroy', check=zc.graphtracelogs.auth.checker)
+    @bobo.post('/destroy', check=zc.graphmetrics.auth.checker)
     def destroy(self, imgid):
         logging.info("%r destroy %r %r %r",
                      who(self.request), self.user, self.name, imgid)
@@ -346,7 +349,7 @@ class App:
         return ''
 
     @bobo.post(content_type='application/json',
-               check=zc.graphtracelogs.auth.checker)
+               check=zc.graphmetrics.auth.checker)
     def save(self, name, overwrite=False):
         me = who(self.request)
         definitions = self.get_definitions(me)

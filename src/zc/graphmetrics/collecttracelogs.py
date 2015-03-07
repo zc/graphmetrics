@@ -9,7 +9,7 @@ import rrdtool
 import socket
 import sys
 import time
-import zc.graphtracelogs
+import zc.graphmetrics
 
 # Gaaaa, pickles!
 sys.modules['zc.graphtracelogs.collect'] = sys.modules[__name__]

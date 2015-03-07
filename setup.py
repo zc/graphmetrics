@@ -41,6 +41,7 @@ setup(
     namespace_packages = name.split('.')[:1],
     package_dir = {'': 'src'},
     install_requires = [
+        'bobo',
         'boto',
         'keyring',
         'py-rrdtool',
