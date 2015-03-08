@@ -54,7 +54,6 @@ setup(
         'zc.ngi',
         'zc.recipe.deployment',
         'zc.recipe.rhrc',
-        'zc.wsgisessions',
         'zc.zdaemonrecipe',
         'zc.zk [static]',
         ],
