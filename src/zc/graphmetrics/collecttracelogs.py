@@ -12,8 +12,8 @@ import time
 import zc.graphmetrics
 
 # Gaaaa, pickles!
-sys.modules['zc.graphtracelogs.collect'] = sys.modules[__name__]
-zc.graphtracelogs.collect = sys.modules[__name__]
+sys.modules['zc.graphtracelogs'] = sys.modules['zc.graphmetrics']
+sys.modules['zc.graphtracelogs.collecttracelogs'] = sys.modules[__name__]
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(name)s %(levelname)s %(message)r',
