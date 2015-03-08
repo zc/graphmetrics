@@ -196,7 +196,7 @@ dojo.addOnLoad(function() {
         dojo.body().appendChild(new dijit.form.Button({
            label: 'Logout',
            style: "float: right",
-           onClick: function () { navigator.id.logout(); }
+           onClick: function () { window.location = '/persona/logout.html'; }
         }).domNode);
 
         var button_div = dojo.create('div',{}, dojo.body());

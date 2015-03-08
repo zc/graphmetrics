@@ -530,8 +530,6 @@ index_html = """
 <script type="text/javascript"
         src="%(dojoroot)s/dojo/dojo.js"
         ></script>
-<script src="https://login.persona.org/include.js"></script>
-<script type="text/javascript" src="/login.js"></script>
 <script type="text/javascript" src="web.js"></script>
 </head><body class="tundra"></body></html>
 """ % globals()
