@@ -1,4 +1,4 @@
-Name: graphtracelogs
+Name: graphmetrics
 Version: 0
 Release: 1
 
