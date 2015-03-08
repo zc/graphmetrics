@@ -1,5 +1,5 @@
 Name: graphmetrics
-Version: 0.9.1
+Version: 0
 Release: 1
 
 Summary: Trace-log graphing
