@@ -50,15 +50,12 @@
       ${:s}use = egg:bobo
       ${:s}bobo_configure = zc.graphmetrics.tracelogs:config
       ${:s}                 zc.graphmetrics.metrics:config
-      ${:s}                 zc.graphmetrics.auth:config
       ${:s}bobo_resources = zc.graphmetrics.metrics
       ${:s}                 zc.graphmetrics.tracelogs
-      ${:s}                 zc.graphmetrics.auth
       ${:s}
       ${:s}metrics-rrd = ${metrics:rrdpath}
       ${:s}rrd = ${collect:rrdpath}
       ${:s}pool_info =
-      ${:s}url = http://metrics.nova.aws.zope.net
       ${:s}
       ${:s}filter-with = reload
       ${:s}
@@ -83,12 +80,6 @@
       ${:s}use = egg:paste#translogger
       ${:s}logger_name = access
       ${:s}
-      ${:s}filter-with = browserid
-      ${:s}
-      ${:s}[filter:browserid]
-      ${:s}use = egg:zc.wsgisessions
-      ${:s}db-name =
-      ${:s}
       ${:s}filter-with = zodb
       ${:s}
       ${:s}[filter:zodb]
@@ -100,7 +91,12 @@
       ${:s}     </filestorage>
       ${:s}  </zodb>
       ${:s}
-      ${:s}initializer = zc.graphmetrics.auth:db_init
+      ${:s}filter-with = persona
+      ${:s}
+      ${:s}[filter:persona]
+      ${:s}use = egg:zc.persona
+      ${:s}secret = testsecret
+      ${:s}audience = http://graphs.example.com
       ${:s}
       ${:s}[filter:debug]
       ${:s}use = egg:bobo#debug
@@ -112,7 +108,7 @@
     [rc]
     chkconfig = 345 99 10
     deployment = deployment
-    digest = 6339dacd3f956a9cf9faa537168f2143ae38e21903c16b872358a8f3
+    digest = 0321d5d92cde4988bd3eb1a90c9624320b4e94f6aec6428b4c48731d
     parts = web metrics collect kinesis
     process-management = true
     recipe = zc.recipe.rhrc

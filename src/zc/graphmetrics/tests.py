@@ -24,8 +24,9 @@ import zc.zk.testing
 initial_tree = """
 /zmh
   /metrics
-    url = 'http://metrics.nova.aws.zope.net'
+    url = 'http://graphs.example.com'
     zim = 'samanage4.zmh.zope.net:5556'
+    secret = 'testsecret'
 """
 
 def setUp(test):
