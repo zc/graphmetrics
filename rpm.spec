@@ -4,9 +4,9 @@ Release: 1
 
 Summary: Trace-log graphing
 Group: Applications/Database
-Requires: cleanpython26 rrdtool
-BuildRequires: cleanpython26 rrdtool-devel
-%define python /opt/cleanpython26/bin/python
+Requires: cleanpython27 rrdtool
+BuildRequires: cleanpython27 rrdtool-devel
+%define python /opt/cleanpython27/bin/python
 
 ##########################################################################
 # Lines below this point normally shouldn't change
