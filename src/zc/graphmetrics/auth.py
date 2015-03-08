@@ -3,7 +3,7 @@ import re
 
 authorized = re.compile(r'@(zope|reachtapp)\.com$').search
 def checker(self, request, func):
-    if not authorized(request.remote_user):
+    if not authorized(request.remote_user or ''):
         return bobo.redirect(
             '/persona/login.html?came_from='+request.path_info)
 
